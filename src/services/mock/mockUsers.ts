@@ -1,5 +1,5 @@
 import { endOfMonth, format, startOfMonth } from "date-fns";
-import type { LegalInfo, User, UsersService } from "@/services/api";
+import type { LegalInfo, UsersService } from "@/services/api";
 import type { UserStatus } from "@/lib/constants";
 import { db, delay, findUser } from "./db";
 

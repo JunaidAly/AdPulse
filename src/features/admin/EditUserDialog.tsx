@@ -16,7 +16,7 @@ import { Slider } from "@/components/ui/slider";
 import { useAppDispatch } from "@/app/hooks";
 import { updateRevenueShare, updateUserStatus } from "./usersSlice";
 import { services, type User } from "@/services";
-import { REVENUE_SHARE_MAX, REVENUE_SHARE_MIN, REVENUE_SHARE_STEP, USER_STATUS } from "@/lib/constants";
+import { REVENUE_SHARE_MAX, REVENUE_SHARE_MIN, REVENUE_SHARE_STEP, USER_STATUS, type UserStatus } from "@/lib/constants";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +28,7 @@ interface EditUserDialogProps {
 export function EditUserDialog({ user, onClose }: EditUserDialogProps) {
   const dispatch = useAppDispatch();
   const [share, setShare] = useState(0.8);
-  const [status, setStatus] = useState(USER_STATUS.ACTIVE);
+  const [status, setStatus] = useState<UserStatus>(USER_STATUS.ACTIVE);
   const [rawCents, setRawCents] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
