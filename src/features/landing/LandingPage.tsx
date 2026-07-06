@@ -13,9 +13,7 @@ import { LandingFooter } from "./LandingFooter";
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-[#f7f4ec] pb-px">
-      <div className="pt-4">
-        <LandingNav />
-      </div>
+      <LandingNav />
       <HeroSection />
       <GrowthSection />
       <AutomateBanner />

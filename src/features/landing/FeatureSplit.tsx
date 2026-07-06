@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Reveal } from "./motion";
 
 interface FeatureSplitProps {
   icon: LucideIcon;
@@ -27,7 +28,7 @@ export function FeatureSplit({
 }: FeatureSplitProps) {
   return (
     <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:gap-16">
-      <div className={cn(reverse && "md:order-2")}>
+      <Reveal className={cn(reverse && "md:order-2")}>
         <div className="flex items-center gap-2">
           <span
             className="flex h-9 w-9 items-center justify-center rounded-full border"
@@ -48,8 +49,10 @@ export function FeatureSplit({
             {note}
           </p>
         )}
-      </div>
-      <div className={cn(reverse && "md:order-1")}>{mockup}</div>
+      </Reveal>
+      <Reveal delay={0.1} y={40} className={cn(reverse && "md:order-1")}>
+        {mockup}
+      </Reveal>
     </div>
   );
 }

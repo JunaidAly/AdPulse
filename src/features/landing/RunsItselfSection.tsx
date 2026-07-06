@@ -1,4 +1,5 @@
 import { Gauge, Radio, Sparkles, Target } from "lucide-react";
+import { Reveal } from "./motion";
 
 export function RunsItselfSection() {
   return (
@@ -7,7 +8,7 @@ export function RunsItselfSection() {
       <div className="pointer-events-none absolute -right-10 bottom-0 h-96 w-96 rounded-full bg-violet-600/20 blur-3xl" />
 
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 md:grid-cols-2">
-        <div>
+        <Reveal>
           <h2 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
             You set it up once. It runs itself.
           </h2>
@@ -26,9 +27,9 @@ export function RunsItselfSection() {
               ≈ 2 minutes to go live.
             </div>
           </div>
-        </div>
+        </Reveal>
 
-        <div className="relative mx-auto h-80 w-80">
+        <Reveal delay={0.15} className="relative mx-auto h-80 w-80">
           <div className="absolute inset-0 rounded-full border border-white/15" />
           <OrbitNode className="left-1/2 top-0 -translate-x-1/2 -translate-y-1/2" icon={Radio} label="Serve" sub="every format, one tag" />
           <OrbitNode className="right-0 bottom-10 translate-x-1/4" icon={Gauge} label="Measure" sub="viewability · fill · RPM" color="#2dd4bf" />
@@ -39,7 +40,7 @@ export function RunsItselfSection() {
             <p className="text-sm font-bold">Session RPM</p>
             <p className="text-xs font-semibold text-primary">↑ grow</p>
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

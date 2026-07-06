@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Reveal } from "./motion";
 
 export function ClosingSection() {
   return (
     <section className="relative overflow-hidden py-28">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-100/50 via-transparent to-amber-100/40" />
-      <div className="relative mx-auto max-w-2xl px-4 text-center">
+      <Reveal className="relative mx-auto max-w-2xl px-4 text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-primary">— The summit —</p>
         <h2 className="mt-4 text-4xl font-extrabold leading-tight tracking-tight text-[#171331] sm:text-6xl">
           Set the goal. We'll do the climbing.
@@ -22,7 +23,7 @@ export function ClosingSection() {
             <Link to="/login">Talk to us</Link>
           </Button>
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Reveal } from "./motion";
 
 export function AutomateBanner() {
   return (
@@ -12,7 +13,7 @@ export function AutomateBanner() {
             "repeating-linear-gradient(90deg, rgba(75,52,224,0.12) 0 2px, transparent 2px 7px)",
         }}
       />
-      <div className="relative mx-auto max-w-3xl px-4 py-28 text-center">
+      <Reveal className="relative mx-auto max-w-3xl px-4 py-28 text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-primary">— What we're for —</p>
         <h2 className="mt-4 text-4xl font-extrabold leading-tight tracking-tight text-[#171331] sm:text-5xl md:text-6xl">
           Automate what <span className="text-[#6b6780]">repeats.</span>
@@ -31,7 +32,7 @@ export function AutomateBanner() {
             <a href="#features">See how it works</a>
           </Button>
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }

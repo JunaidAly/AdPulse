@@ -16,6 +16,7 @@ export default defineConfig({
           react: ["react", "react-dom", "react-router-dom"],
           charts: ["recharts"],
           redux: ["@reduxjs/toolkit", "react-redux"],
+          motion: ["framer-motion"],
         },
       },
     },

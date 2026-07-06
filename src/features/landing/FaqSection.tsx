@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Minus, Plus } from "lucide-react";
+import { Reveal } from "./motion";
 
 const FAQS = [
   {
@@ -33,12 +34,12 @@ export function FaqSection() {
       style={{ backgroundImage: "radial-gradient(#d9d4f0 0.8px, transparent 0.8px)", backgroundSize: "22px 22px" }}
     >
       <div className="mx-auto max-w-3xl px-4">
-        <div className="text-center">
+        <Reveal className="text-center">
           <p className="text-sm font-semibold uppercase tracking-widest text-primary">— Questions —</p>
           <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-[#171331] sm:text-5xl">
             The things publishers ask first
           </h2>
-        </div>
+        </Reveal>
         <div className="mt-12 space-y-2">
           {FAQS.map((item, i) => {
             const isOpen = open === i;

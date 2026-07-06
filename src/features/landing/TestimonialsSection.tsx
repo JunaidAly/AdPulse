@@ -1,4 +1,5 @@
 import { Quote } from "lucide-react";
+import { Reveal, Stagger, StaggerItem } from "./motion";
 
 const TESTIMONIALS = [
   {
@@ -21,22 +22,24 @@ export function TestimonialsSection() {
   return (
     <section className="bg-[#eef0fb] py-24">
       <div className="mx-auto max-w-6xl px-4 text-center">
-        <h2 className="text-4xl font-extrabold tracking-tight text-[#171331] sm:text-5xl">Backed, and proven</h2>
-        <p className="mx-auto mt-4 max-w-2xl text-[#5b5670]">
-          People choose AdPulse because it makes publisher monetization easier to understand, run, and improve.
-        </p>
-        <div className="mt-14 grid gap-8 md:grid-cols-2">
+        <Reveal>
+          <h2 className="text-4xl font-extrabold tracking-tight text-[#171331] sm:text-5xl">Backed, and proven</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-[#5b5670]">
+            People choose AdPulse because it makes publisher monetization easier to understand, run, and improve.
+          </p>
+        </Reveal>
+        <Stagger className="mt-14 grid gap-8 md:grid-cols-2">
           {TESTIMONIALS.map((t) => (
-            <div key={t.name} className="relative rounded-2xl border-2 border-primary/40 bg-white/60 p-7 text-left">
+            <StaggerItem key={t.name} className="relative rounded-2xl border-2 border-primary/40 bg-white/60 p-7 text-left">
               <span className="absolute -top-8 right-6 font-[cursive] text-lg text-primary">{t.tag}</span>
               <Quote className="h-6 w-6 text-primary/40" />
               <p className="mt-3 leading-relaxed text-[#2a2740]">{t.quote}</p>
               <p className="mt-5 text-sm font-semibold text-[#171331]">
                 {t.name} <span className="font-normal text-muted-foreground">· {t.role}</span>
               </p>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </div>
     </section>
   );

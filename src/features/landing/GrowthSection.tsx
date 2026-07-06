@@ -1,5 +1,6 @@
 import { Feather, HeartHandshake, Link2, LineChart, Shapes } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Reveal, Stagger, StaggerItem } from "./motion";
 
 interface Milestone {
   icon: LucideIcon;
@@ -21,7 +22,7 @@ const MILESTONES: Milestone[] = [
 export function GrowthSection() {
   return (
     <section id="growth" className="mx-auto max-w-6xl px-4 py-24">
-      <div className="text-center">
+      <Reveal className="text-center">
         <p className="text-sm font-semibold text-primary">What we give publishers</p>
         <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-[#171331] sm:text-5xl">
           Built around your growth
@@ -29,7 +30,7 @@ export function GrowthSection() {
         <p className="mx-auto mt-4 max-w-2xl text-[#5b5670]">
           Each step of the climb does something useful for your bottom line — here is what you can count on.
         </p>
-      </div>
+      </Reveal>
 
       <div className="relative mt-16 hidden h-64 md:block">
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
@@ -47,14 +48,14 @@ export function GrowthSection() {
         ))}
       </div>
 
-      <div className="mt-8 grid gap-8 sm:grid-cols-2 md:mt-12 md:grid-cols-5">
+      <Stagger className="mt-8 grid gap-8 sm:grid-cols-2 md:mt-12 md:grid-cols-5">
         {MILESTONES.map(({ title, desc }) => (
-          <div key={title} className="text-center md:text-left">
+          <StaggerItem key={title} className="text-center md:text-left">
             <h3 className="font-semibold text-[#171331]">{title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-[#6b6780]">{desc}</p>
-          </div>
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
     </section>
   );
 }
