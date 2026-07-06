@@ -12,7 +12,7 @@ import type {
 } from "@/services/api";
 import { ROLES } from "@/lib/constants";
 import { computeCtr, computeEcpmCents } from "@/lib/format";
-import { db, delay, findUser } from "./db";
+import { db, delay, findUser, resolveUserId } from "./db";
 import { siteProfiles, type RawMetric } from "./seed";
 
 interface AdjustedMetric {
@@ -49,7 +49,9 @@ function visibleSiteIds(userId: string, role: string, filter?: string[]): string
   const owned =
     role === ROLES.ADMIN
       ? db.sites.map((s) => s.id)
-      : db.sites.filter((s) => s.ownerId === userId).map((s) => s.id);
+      : db.sites
+          .filter((s) => s.ownerId === resolveUserId(userId))
+          .map((s) => s.id);
   if (filter && filter.length) return owned.filter((id) => filter.includes(id));
   return owned;
 }

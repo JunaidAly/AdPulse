@@ -5,10 +5,11 @@ import { ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { AuthShell } from "./AuthShell";
-import { login } from "./authSlice";
+import { login, loginWithGoogle } from "./authSlice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { services } from "@/services";
 import { useAppDispatch } from "@/app/hooks";
 
 const schema = z.object({
@@ -34,9 +35,21 @@ export function LoginPage() {
       toast.success(`Welcome back, ${result.payload.name}`);
       navigate("/dashboard");
     } else {
-      toast.error("Login failed");
+      toast.error(result.error?.message ?? "Login failed");
     }
   };
+
+  const onGoogle = async () => {
+    const result = await dispatch(loginWithGoogle());
+    if (loginWithGoogle.fulfilled.match(result)) {
+      toast.success(`Welcome, ${result.payload.name}`);
+      navigate("/dashboard");
+    } else {
+      toast.error(result.error?.message ?? "Google sign-in failed");
+    }
+  };
+
+  const googleEnabled = typeof services.auth.loginWithGoogle === "function";
 
   const fillDemo = (email: string) => {
     setValue("email", email);
@@ -76,6 +89,25 @@ export function LoginPage() {
           {isSubmitting ? "Signing in…" : "Log in"} <ArrowRight className="h-4 w-4" />
         </Button>
       </form>
+
+      {googleEnabled && (
+        <>
+          <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            or
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={isSubmitting}
+            onClick={onGoogle}
+          >
+            Continue with Google
+          </Button>
+        </>
+      )}
 
       <div className="mt-5 rounded-lg border border-dashed bg-muted/40 p-3 text-xs">
         <p className="mb-2 font-medium text-foreground">Demo accounts</p>

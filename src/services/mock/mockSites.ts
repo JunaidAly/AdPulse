@@ -1,10 +1,11 @@
 import type { Site, SitesService } from "@/services/api";
 import { SITE_STATUS } from "@/lib/constants";
-import { db, delay, findUser, nextId } from "./db";
+import { db, delay, findUser, nextId, resolveUserId } from "./db";
 
 export const mockSites: SitesService = {
   async listByUser(userId: string): Promise<Site[]> {
-    return delay(db.sites.filter((s) => s.ownerId === userId).map((s) => ({ ...s })));
+    const ownerId = resolveUserId(userId);
+    return delay(db.sites.filter((s) => s.ownerId === ownerId).map((s) => ({ ...s })));
   },
 
   async listAll(): Promise<Site[]> {
@@ -14,7 +15,7 @@ export const mockSites: SitesService = {
   async addSite(userId: string, domain: string): Promise<Site> {
     const site: Site = {
       id: nextId("s"),
-      ownerId: userId,
+      ownerId: resolveUserId(userId),
       ownerName: findUser(userId)?.name ?? "Unknown",
       domain: domain.trim().toLowerCase(),
       status: SITE_STATUS.PENDING,

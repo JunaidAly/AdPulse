@@ -1,7 +1,7 @@
 import { endOfMonth, format, startOfMonth } from "date-fns";
 import type { LegalInfo, UsersService } from "@/services/api";
 import type { UserStatus } from "@/lib/constants";
-import { db, delay, findUser } from "./db";
+import { db, delay, findUser, resolveUserId } from "./db";
 
 export const mockUsers: UsersService = {
   async list() {
@@ -25,7 +25,8 @@ export const mockUsers: UsersService = {
   async getRawMonthlyRevenueCents(userId: string) {
     const from = format(startOfMonth(db.referenceDate), "yyyy-MM-dd");
     const to = format(endOfMonth(db.referenceDate), "yyyy-MM-dd");
-    const siteIds = new Set(db.sites.filter((s) => s.ownerId === userId).map((s) => s.id));
+    const ownerId = resolveUserId(userId);
+    const siteIds = new Set(db.sites.filter((s) => s.ownerId === ownerId).map((s) => s.id));
     const raw = db.rawMetrics
       .filter((r) => siteIds.has(r.siteId) && r.date >= from && r.date <= to)
       .reduce((s, r) => s + r.revenueCents, 0);

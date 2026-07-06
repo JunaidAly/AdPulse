@@ -31,8 +31,21 @@ export function delay<T>(value: T): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
 }
 
+/**
+ * MODULE 3 SHIM: a Firebase-authenticated user has a real uid with no seeded
+ * mock data. Map any unknown uid to the demo publisher so reports/sites/
+ * payouts keep returning data for a logged-in publisher. Known seeded ids
+ * (used by the admin screens) pass through unchanged. This dies in
+ * Modules 5–7 once real data backs those services.
+ */
+export const DEMO_PUBLISHER_ID = "u_pub";
+
+export function resolveUserId(userId: string): string {
+  return db.users.some((u) => u.id === userId) ? userId : DEMO_PUBLISHER_ID;
+}
+
 export function findUser(userId: string): User | undefined {
-  return db.users.find((u) => u.id === userId);
+  return db.users.find((u) => u.id === resolveUserId(userId));
 }
 
 let idCounter = 1000;

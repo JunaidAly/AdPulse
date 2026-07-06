@@ -1,16 +1,17 @@
 import { endOfMonth, format, startOfMonth } from "date-fns";
 import type { PayoutDetails, PayoutsService, User } from "@/services/api";
 import { PAYOUT_STATUS, ROLES } from "@/lib/constants";
-import { db, delay, findUser } from "./db";
+import { db, delay, findUser, resolveUserId } from "./db";
 
 /** Balance = share-adjusted revenue this month minus payouts already created. */
 function currentMonthRevenueCents(userId: string): number {
+  const ownerId = resolveUserId(userId);
   const user = findUser(userId);
   if (!user) return 0;
   const share = user.role === ROLES.ADMIN ? 1 : user.revenueShare;
   const from = format(startOfMonth(db.referenceDate), "yyyy-MM-dd");
   const to = format(endOfMonth(db.referenceDate), "yyyy-MM-dd");
-  const siteIds = new Set(db.sites.filter((s) => s.ownerId === userId).map((s) => s.id));
+  const siteIds = new Set(db.sites.filter((s) => s.ownerId === ownerId).map((s) => s.id));
   const raw = db.rawMetrics
     .filter((r) => siteIds.has(r.siteId) && r.date >= from && r.date <= to)
     .reduce((s, r) => s + r.revenueCents, 0);
@@ -19,9 +20,10 @@ function currentMonthRevenueCents(userId: string): number {
 
 export const mockPayouts: PayoutsService = {
   async listByUser(userId: string) {
+    const id = resolveUserId(userId);
     return delay(
       db.payouts
-        .filter((p) => p.userId === userId)
+        .filter((p) => p.userId === id)
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
         .map((p) => ({ ...p })),
     );
@@ -38,8 +40,9 @@ export const mockPayouts: PayoutsService = {
   },
 
   async getBalanceCents(userId: string) {
+    const id = resolveUserId(userId);
     const pending = db.payouts
-      .filter((p) => p.userId === userId && p.status === PAYOUT_STATUS.PENDING)
+      .filter((p) => p.userId === id && p.status === PAYOUT_STATUS.PENDING)
       .reduce((s, p) => s + p.amountCents, 0);
     return delay(Math.max(0, currentMonthRevenueCents(userId) - pending));
   },

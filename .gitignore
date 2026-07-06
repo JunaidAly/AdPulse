@@ -4,6 +4,11 @@ dist-ssr
 *.local
 *.log
 
+# Local env / secrets (never commit) — keep .env.example tracked
+.env
+.env.*
+!.env.example
+
 # Editor
 .vscode/*
 !.vscode/extensions.json

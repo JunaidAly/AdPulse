@@ -40,7 +40,7 @@ export function RegisterPage() {
       toast.success("Account created");
       navigate("/dashboard");
     } else {
-      toast.error("Registration failed");
+      toast.error(result.error?.message ?? "Registration failed");
     }
   };
 

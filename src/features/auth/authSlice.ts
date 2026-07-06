@@ -6,12 +6,17 @@ interface AuthState {
   user: User | null;
   status: "idle" | "loading" | "authenticated" | "error";
   error: string | null;
+  /** False until the first Firebase session restore resolves. Route guards
+   *  must wait for this to avoid flashing the login page for a logged-in
+   *  user (or spinning forever for a logged-out one). */
+  initialized: boolean;
 }
 
 const initialState: AuthState = {
   user: null,
   status: "idle",
   error: null,
+  initialized: false,
 };
 
 export const login = createAsyncThunk("auth/login", (creds: { email: string; password: string }) =>
@@ -24,6 +29,13 @@ export const register = createAsyncThunk(
     services.auth.register(data.name, data.email, data.password),
 );
 
+export const loginWithGoogle = createAsyncThunk("auth/loginWithGoogle", () => {
+  if (!services.auth.loginWithGoogle) {
+    throw new Error("Google sign-in is not available.");
+  }
+  return services.auth.loginWithGoogle();
+});
+
 export const logout = createAsyncThunk("auth/logout", async () => {
   await services.auth.logout();
 });
@@ -32,6 +44,16 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    /**
+     * Applied by the app-level Firebase session subscription on every auth
+     * change (restore on load, cross-tab login/logout, token refresh).
+     * Marks auth as initialized so route guards can stop waiting.
+     */
+    sessionResolved(state, action: PayloadAction<User | null>) {
+      state.user = action.payload;
+      state.status = action.payload ? "authenticated" : "idle";
+      state.initialized = true;
+    },
     /** Keep the session user in sync when profile/payout details change. */
     setUser(state, action: PayloadAction<User>) {
       state.user = action.payload;
@@ -68,6 +90,18 @@ const authSlice = createSlice({
         state.status = "error";
         state.error = action.error.message ?? "Registration failed";
       })
+      .addCase(loginWithGoogle.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(loginWithGoogle.fulfilled, (state, action) => {
+        state.status = "authenticated";
+        state.user = action.payload;
+      })
+      .addCase(loginWithGoogle.rejected, (state, action) => {
+        state.status = "error";
+        state.error = action.error.message ?? "Google sign-in failed";
+      })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
         state.status = "idle";
@@ -75,5 +109,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { setUser, setLegal, setPayout, clearError } = authSlice.actions;
+export const { sessionResolved, setUser, setLegal, setPayout, clearError } =
+  authSlice.actions;
 export default authSlice.reducer;

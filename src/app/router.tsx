@@ -1,5 +1,7 @@
 import { Navigate, Outlet, createBrowserRouter } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAppSelector } from "@/app/hooks";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { LandingPage } from "@/features/landing/LandingPage";
 import { LoginPage } from "@/features/auth/LoginPage";
@@ -15,9 +17,20 @@ import { AdminUsersPage } from "@/features/admin/AdminUsersPage";
 import { AdminSitesPage } from "@/features/admin/AdminSitesPage";
 import { AdminPayoutsPage } from "@/features/admin/AdminPayoutsPage";
 
-/** Requires an authenticated session. */
+/** Full-screen loader shown while the Firebase session is being restored. */
+function SessionLoader() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
+
+/** Requires an authenticated session. Waits for session restore first. */
 function ProtectedRoute() {
+  const initialized = useAppSelector((s) => s.auth.initialized);
   const { isAuthenticated } = useAuth();
+  if (!initialized) return <SessionLoader />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <Outlet />;
 }
@@ -31,7 +44,9 @@ function AdminRoute() {
 
 /** Sends already-authenticated users away from auth screens. */
 function PublicOnlyRoute() {
+  const initialized = useAppSelector((s) => s.auth.initialized);
   const { isAuthenticated } = useAuth();
+  if (!initialized) return <SessionLoader />;
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }

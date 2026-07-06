@@ -156,6 +156,11 @@ export interface AuthService {
   register(name: string, email: string, password: string): Promise<User>;
   logout(): Promise<void>;
   requestPasswordReset(email: string): Promise<void>;
+  /**
+   * Google popup sign-in. Optional: the mock backend does not implement it,
+   * so callers must feature-detect (`services.auth.loginWithGoogle?.()`).
+   */
+  loginWithGoogle?(): Promise<User>;
 }
 
 export interface ReportsService {

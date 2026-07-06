@@ -23,7 +23,17 @@ export function ForgotPasswordPage() {
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (values: FormValues) => {
-    await services.auth.requestPasswordReset(values.email);
+    try {
+      await services.auth.requestPasswordReset(values.email);
+    } catch (err) {
+      // Never reveal whether the email exists (avoid account enumeration);
+      // only surface genuine failures like network errors.
+      const message = err instanceof Error ? err.message : "";
+      if (message.toLowerCase().includes("network")) {
+        toast.error(message);
+        return;
+      }
+    }
     setSent(true);
     toast.success("Reset link sent");
   };
