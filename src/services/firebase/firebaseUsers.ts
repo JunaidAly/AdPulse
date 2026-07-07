@@ -13,11 +13,13 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
+import { endOfMonth, format, startOfMonth } from "date-fns";
 import { httpsCallable } from "firebase/functions";
 import type { LegalInfo, User, UsersService } from "@/services/api";
 import type { UserStatus } from "@/lib/constants";
 import { db, functions } from "./config";
 import { errorMessage, toUser, type RawUser } from "./mappers";
+import { callGetReports } from "./firebaseReports";
 
 const callAdminUpdateUser = httpsCallable<
   { uid: string; revenueShare?: number; status?: string },
@@ -27,17 +29,6 @@ const callAdminUpdateUser = httpsCallable<
 async function readUser(userId: string): Promise<User> {
   const snap = await getDoc(doc(db, "users", userId));
   return toUser(userId, (snap.data() ?? {}) as RawUser);
-}
-
-// Deterministic per-uid value so the admin "raw → user sees" preview shows
-// something stable. Real numbers arrive in Module 7.
-function mockRawCents(uid: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < uid.length; i++) {
-    h ^= uid.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return 200000 + (Math.abs(h) % 900000); // $2,000–$11,000 in cents
 }
 
 export const firebaseUsers: UsersService = {
@@ -65,8 +56,20 @@ export const firebaseUsers: UsersService = {
   },
 
   async getRawMonthlyRevenueCents(userId: string): Promise<number> {
-    // TODO Module 7: real revenue from reports_raw (share-adjusted preview).
-    return mockRawCents(userId);
+    // Real raw (100%) revenue for this owner, this month. Only admins call
+    // this (EditUserDialog), so getReports returns all sites at share 1.0;
+    // we sum the rows owned by the target user.
+    const now = new Date();
+    const from = format(startOfMonth(now), "yyyy-MM-dd");
+    const to = format(endOfMonth(now), "yyyy-MM-dd");
+    try {
+      const res = await callGetReports({ startDate: from, endDate: to });
+      return res.data.rows
+        .filter((r) => r.ownerUid === userId)
+        .reduce((sum, r) => sum + r.revenueCents, 0);
+    } catch {
+      return 0;
+    }
   },
 
   async updateAccount(

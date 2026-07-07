@@ -10,16 +10,16 @@ import { firebaseAuth } from "./firebase/firebaseAuth";
 import { firebaseSites } from "./firebase/firebaseSites";
 import { firebaseUsers } from "./firebase/firebaseUsers";
 import { firebasePayouts } from "./firebase/firebasePayouts";
-import { mockReports } from "./mock/mockReports";
+import { firebaseReports } from "./firebase/firebaseReports";
 
-// Module 5: auth, sites, and users are Firebase-backed. Payouts is a hybrid
-// (payout METHOD is real on the user doc; listing/balance/processing stay
-// mock until Module 8). Reports stays mock until Module 7 — it keys its
-// deterministic metrics off REAL site ids via the realSiteRegistry so the
-// dashboard/reports pages still render for a real publisher.
+// Module 7: auth, sites, users, and reports are Firebase-backed. Reports go
+// through the getReports callable, which applies the revenue-share
+// multiplier server-side (publishers see adjusted data, admins see raw).
+// Payouts is still a hybrid (payout METHOD real; listing/balance/processing
+// mock until Module 8).
 export const services: Services = {
   auth: firebaseAuth,
-  reports: mockReports,
+  reports: firebaseReports,
   sites: firebaseSites,
   payouts: firebasePayouts,
   users: firebaseUsers,
