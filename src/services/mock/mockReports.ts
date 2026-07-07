@@ -13,7 +13,8 @@ import type {
 import { ROLES } from "@/lib/constants";
 import { computeCtr, computeEcpmCents } from "@/lib/format";
 import { db, delay, findUser, resolveUserId } from "./db";
-import { siteProfiles, type RawMetric } from "./seed";
+import { generateSiteMetrics, profileForSite, type RawMetric } from "./seed";
+import { allRealSiteIds, realSiteIdsForOwner } from "@/services/realSiteRegistry";
 
 interface AdjustedMetric {
   siteId: string;
@@ -46,14 +47,26 @@ function effectiveShare(userId: string, role: string): number {
 }
 
 function visibleSiteIds(userId: string, role: string, filter?: string[]): string[] {
+  // Prefer REAL site ids (Module 5) so pages render for real publishers;
+  // fall back to seeded demo sites when the registry is empty.
+  const real = role === ROLES.ADMIN ? allRealSiteIds() : realSiteIdsForOwner(userId);
   const owned =
-    role === ROLES.ADMIN
-      ? db.sites.map((s) => s.id)
-      : db.sites
-          .filter((s) => s.ownerId === resolveUserId(userId))
-          .map((s) => s.id);
+    real.length > 0
+      ? real
+      : role === ROLES.ADMIN
+        ? db.sites.map((s) => s.id)
+        : db.sites
+            .filter((s) => s.ownerId === resolveUserId(userId))
+            .map((s) => s.id);
   if (filter && filter.length) return owned.filter((id) => filter.includes(id));
   return owned;
+}
+
+// Seeded sites use their prebuilt metrics; real (Module 5) site ids get
+// deterministic metrics generated on the fly from their id hash.
+function rawMetricsForSite(siteId: string): RawMetric[] {
+  const seeded = db.rawMetrics.filter((r) => r.siteId === siteId);
+  return seeded.length > 0 ? seeded : generateSiteMetrics(siteId, db.referenceDate);
 }
 
 function collect(
@@ -62,10 +75,13 @@ function collect(
   to: string,
   share: number,
 ): AdjustedMetric[] {
-  const set = new Set(siteIds);
-  return db.rawMetrics
-    .filter((r) => set.has(r.siteId) && r.date >= from && r.date <= to)
-    .map((r) => applyShare(r, share));
+  const rows: AdjustedMetric[] = [];
+  for (const siteId of siteIds) {
+    for (const r of rawMetricsForSite(siteId)) {
+      if (r.date >= from && r.date <= to) rows.push(applyShare(r, share));
+    }
+  }
+  return rows;
 }
 
 function totalsOf(rows: AdjustedMetric[]): ReportTotals {
@@ -157,7 +173,7 @@ export const mockReports: ReportsService = {
     let deviceTotal = 0;
     for (const [siteId, rows] of bySite) {
       const rev = rows.reduce((s, r) => s + r.revenueCents, 0);
-      for (const d of siteProfiles[siteId]?.devices ?? []) {
+      for (const d of profileForSite(siteId).devices) {
         deviceAcc.set(d.device, (deviceAcc.get(d.device) ?? 0) + d.share * rev);
         deviceTotal += d.share * rev;
       }
@@ -171,7 +187,7 @@ export const mockReports: ReportsService = {
     let countryTotal = 0;
     for (const [siteId, rows] of bySite) {
       const rev = rows.reduce((s, r) => s + r.revenueCents, 0);
-      for (const c of siteProfiles[siteId]?.countries ?? []) {
+      for (const c of profileForSite(siteId).countries) {
         const prev = countryAcc.get(c.code) ?? { name: c.name, w: 0 };
         prev.w += c.weight * rev;
         countryAcc.set(c.code, prev);

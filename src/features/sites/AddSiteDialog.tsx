@@ -20,19 +20,20 @@ import { useAppDispatch } from "@/app/hooks";
 import { addSite } from "./sitesSlice";
 import { useAuth } from "@/hooks/useAuth";
 
-const DOMAIN_RE = /^(?!:\/\/)([a-zA-Z0-9-_]+\.)+[a-zA-Z]{2,}$/;
-
 export function AddSiteDialog({ existingDomains }: { existingDomains: string[] }) {
   const [open, setOpen] = useState(false);
   const dispatch = useAppDispatch();
   const { user } = useAuth();
 
+  // Loose client check only — the createSite callable normalizes the input
+  // (strips protocol/www/path) and is the source of truth for validity and
+  // duplicates. This lets users paste a full URL and have it normalized.
   const schema = z.object({
     domain: z
       .string()
       .trim()
       .toLowerCase()
-      .regex(DOMAIN_RE, "Enter a valid domain, e.g. example.com")
+      .min(3, "Enter a domain, e.g. example.com")
       .refine((d) => !existingDomains.includes(d), "You already added this domain"),
   });
   type FormValues = z.infer<typeof schema>;
@@ -54,7 +55,7 @@ export function AddSiteDialog({ existingDomains }: { existingDomains: string[] }
       reset();
       setOpen(false);
     } else {
-      toast.error("Could not add site");
+      toast.error(result.error?.message ?? "Could not add site");
     }
   };
 

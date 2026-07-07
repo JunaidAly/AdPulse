@@ -3,9 +3,14 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { services } from "@/services";
 import { AccountForm, LegalForm, PasswordForm } from "./ProfileForms";
 
 export function ProfilePage() {
+  // Password card is hidden for accounts without a password provider
+  // (e.g. Google-only sign-in), which have no password to change.
+  const canChangePassword = services.auth.hasPasswordProvider?.() ?? true;
+
   return (
     <>
       <PageHeader title="Profile" description="Manage account, reporting, legal, and payout details." />
@@ -38,17 +43,19 @@ export function ProfilePage() {
         </div>
 
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Lock className="h-4 w-4 text-primary" /> Password
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Keep sign-in secure.</p>
-            </CardHeader>
-            <CardContent>
-              <PasswordForm />
-            </CardContent>
-          </Card>
+          {canChangePassword && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Lock className="h-4 w-4 text-primary" /> Password
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Keep sign-in secure.</p>
+              </CardHeader>
+              <CardContent>
+                <PasswordForm />
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

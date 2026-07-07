@@ -152,7 +152,7 @@ export const seedSites: SiteSeed[] = [
   { id: "s_8", ownerId: "u_lena", domain: "foodiehub.co", status: SITE_STATUS.REJECTED, addedAt: "2026-02-12T10:00:00.000Z" },
 ];
 
-function buildProfile(siteId: string): SiteProfile {
+export function buildProfile(siteId: string): SiteProfile {
   const rand = mulberry32(hashString(siteId));
   const base = 8000 + Math.floor(rand() * 42000); // 8k..50k
   const devices = DEVICE_TEMPLATES.map((d) => ({
@@ -183,39 +183,54 @@ export const siteProfiles: Record<string, SiteProfile> = Object.fromEntries(
   seedSites.map((s) => [s.id, buildProfile(s.id)]),
 );
 
-/** Generate `HISTORY_DAYS` of raw daily metrics per approved/rejected site. */
-export function generateRawMetrics(referenceDate: Date): RawMetric[] {
+/**
+ * Profile for any site id — seeded sites use their prebuilt profile; any
+ * other (e.g. a REAL site id in Module 5) gets a deterministic profile
+ * hashed from its id, so mock reports render for real sites too.
+ */
+export function profileForSite(siteId: string): SiteProfile {
+  return siteProfiles[siteId] ?? buildProfile(siteId);
+}
+
+/** Generate `HISTORY_DAYS` of deterministic daily metrics for one site. */
+export function generateSiteMetrics(
+  siteId: string,
+  referenceDate: Date,
+): RawMetric[] {
   const rows: RawMetric[] = [];
   const end = startOfDay(referenceDate);
   const start = subDays(end, HISTORY_DAYS - 1);
+  const profile = profileForSite(siteId);
 
-  for (const site of seedSites) {
-    const profile = siteProfiles[site.id];
-    for (let i = 0; i < HISTORY_DAYS; i++) {
-      const day = addDays(start, i);
-      const dateStr = format(day, "yyyy-MM-dd");
-      const rand = mulberry32(hashString(site.id + dateStr));
+  for (let i = 0; i < HISTORY_DAYS; i++) {
+    const day = addDays(start, i);
+    const dateStr = format(day, "yyyy-MM-dd");
+    const rand = mulberry32(hashString(siteId + dateStr));
 
-      const dow = day.getDay();
-      const weekend = dow === 0 || dow === 6 ? 0.72 : 1;
-      const trend = 0.85 + (i / HISTORY_DAYS) * 0.3; // slow growth over window
-      const noise = 0.8 + rand() * 0.4;
+    const dow = day.getDay();
+    const weekend = dow === 0 || dow === 6 ? 0.72 : 1;
+    const trend = 0.85 + (i / HISTORY_DAYS) * 0.3; // slow growth over window
+    const noise = 0.8 + rand() * 0.4;
 
-      const impressions = Math.max(
-        1500,
-        Math.round(profile.base * weekend * trend * noise),
-      );
-      const ctr = profile.ctrFloor + rand() * profile.ctrRange;
-      const clicks = Math.round(impressions * ctr);
-      const ecpm = profile.ecpmFloor + rand() * profile.ecpmRange; // dollars
-      const ecpmCents = Math.round(ecpm * 100);
-      const revenueCents = Math.round((impressions * ecpmCents) / 1000);
-      const viewability = Math.min(0.92, profile.viewFloor + rand() * 0.2);
+    const impressions = Math.max(
+      1500,
+      Math.round(profile.base * weekend * trend * noise),
+    );
+    const ctr = profile.ctrFloor + rand() * profile.ctrRange;
+    const clicks = Math.round(impressions * ctr);
+    const ecpm = profile.ecpmFloor + rand() * profile.ecpmRange; // dollars
+    const ecpmCents = Math.round(ecpm * 100);
+    const revenueCents = Math.round((impressions * ecpmCents) / 1000);
+    const viewability = Math.min(0.92, profile.viewFloor + rand() * 0.2);
 
-      rows.push({ siteId: site.id, date: dateStr, impressions, clicks, revenueCents, ecpmCents, viewability });
-    }
+    rows.push({ siteId, date: dateStr, impressions, clicks, revenueCents, ecpmCents, viewability });
   }
   return rows;
+}
+
+/** Generate `HISTORY_DAYS` of raw daily metrics per seeded site. */
+export function generateRawMetrics(referenceDate: Date): RawMetric[] {
+  return seedSites.flatMap((s) => generateSiteMetrics(s.id, referenceDate));
 }
 
 // ---- Payouts --------------------------------------------------------------

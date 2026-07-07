@@ -9,14 +9,17 @@
  * This is the ONLY place (with ./config) allowed to import the firebase SDK.
  */
 import {
+  EmailAuthProvider,
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   getIdTokenResult,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updatePassword,
   updateProfile,
   type User as FirebaseUser,
 } from "firebase/auth";
@@ -182,6 +185,32 @@ export const firebaseAuth: AuthService = {
   async requestPasswordReset(email) {
     try {
       await sendPasswordResetEmail(auth, email);
+    } catch (err) {
+      throw friendlyAuthError(err);
+    }
+  },
+
+  hasPasswordProvider() {
+    const user = auth.currentUser;
+    return Boolean(
+      user?.providerData.some((p) => p.providerId === "password"),
+    );
+  },
+
+  async changePassword(currentPassword, newPassword) {
+    const user = auth.currentUser;
+    if (!user || !user.email) {
+      throw new Error("You must be signed in to change your password.");
+    }
+    try {
+      // Reauthenticate with the current password first (validates it and
+      // clears Firebase's requires-recent-login requirement), then update.
+      const credential = EmailAuthProvider.credential(
+        user.email,
+        currentPassword,
+      );
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, newPassword);
     } catch (err) {
       throw friendlyAuthError(err);
     }

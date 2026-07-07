@@ -7,21 +7,22 @@
  */
 import type { Services } from "./api";
 import { firebaseAuth } from "./firebase/firebaseAuth";
+import { firebaseSites } from "./firebase/firebaseSites";
+import { firebaseUsers } from "./firebase/firebaseUsers";
+import { firebasePayouts } from "./firebase/firebasePayouts";
 import { mockReports } from "./mock/mockReports";
-import { mockSites } from "./mock/mockSites";
-import { mockPayouts } from "./mock/mockPayouts";
-import { mockUsers } from "./mock/mockUsers";
 
-// Module 3: auth is now Firebase-backed. Everything else stays on mocks and
-// keeps working for a Firebase-authenticated user via the current-user shim
-// in `mock/db.ts` (resolveUserId). Reports/sites/payouts/users move to real
-// data in Modules 5–7.
+// Module 5: auth, sites, and users are Firebase-backed. Payouts is a hybrid
+// (payout METHOD is real on the user doc; listing/balance/processing stay
+// mock until Module 8). Reports stays mock until Module 7 — it keys its
+// deterministic metrics off REAL site ids via the realSiteRegistry so the
+// dashboard/reports pages still render for a real publisher.
 export const services: Services = {
   auth: firebaseAuth,
   reports: mockReports,
-  sites: mockSites,
-  payouts: mockPayouts,
-  users: mockUsers,
+  sites: firebaseSites,
+  payouts: firebasePayouts,
+  users: firebaseUsers,
 };
 
 // Session-change subscription (login/logout/refresh/restore). Re-exported

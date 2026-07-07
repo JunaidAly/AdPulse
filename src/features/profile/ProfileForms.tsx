@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAppDispatch } from "@/app/hooks";
 import { setLegal, setUser } from "@/features/auth/authSlice";
 import { services } from "@/services";
@@ -46,8 +47,14 @@ export function AccountForm() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="acc-email">Email</Label>
-          <Input id="acc-email" type="email" {...register("email")} />
-          {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={0} className="block">
+                <Input id="acc-email" type="email" disabled {...register("email")} />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>Contact an admin to change your email.</TooltipContent>
+          </Tooltip>
         </div>
       </div>
       <Button type="submit" disabled={isSubmitting}>
@@ -165,10 +172,14 @@ export function PasswordForm() {
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(passwordSchema) });
 
-  const onSubmit = handleSubmit(async () => {
-    await new Promise((r) => setTimeout(r, 400));
-    reset();
-    toast.success("Password updated");
+  const onSubmit = handleSubmit(async (values) => {
+    try {
+      await services.auth.changePassword?.(values.current, values.next);
+      reset();
+      toast.success("Password updated");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not update password");
+    }
   });
 
   return (

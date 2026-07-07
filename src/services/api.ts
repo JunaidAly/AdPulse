@@ -161,6 +161,10 @@ export interface AuthService {
    * so callers must feature-detect (`services.auth.loginWithGoogle?.()`).
    */
   loginWithGoogle?(): Promise<User>;
+  /** Change password for a password-provider account (reauth required). */
+  changePassword?(currentPassword: string, newPassword: string): Promise<void>;
+  /** True when the signed-in user has an email/password provider. */
+  hasPasswordProvider?(): boolean;
 }
 
 export interface ReportsService {
@@ -172,7 +176,12 @@ export interface SitesService {
   listByUser(userId: string): Promise<Site[]>;
   listAll(): Promise<Site[]>;
   addSite(userId: string, domain: string): Promise<Site>;
-  approveSite(siteId: string, gamMappingName: string): Promise<Site>;
+  /** Admin approve. Optional per-site revenueShare override (0.5–1.0). */
+  approveSite(
+    siteId: string,
+    gamMappingName: string,
+    revenueShare?: number,
+  ): Promise<Site>;
   rejectSite(siteId: string): Promise<Site>;
 }
 
