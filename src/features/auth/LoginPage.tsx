@@ -25,7 +25,6 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
@@ -50,11 +49,6 @@ export function LoginPage() {
   };
 
   const googleEnabled = typeof services.auth.loginWithGoogle === "function";
-
-  const fillDemo = (email: string) => {
-    setValue("email", email);
-    setValue("password", "demo1234");
-  };
 
   return (
     <AuthShell
@@ -108,18 +102,6 @@ export function LoginPage() {
           </Button>
         </>
       )}
-
-      <div className="mt-5 rounded-lg border border-dashed bg-muted/40 p-3 text-xs">
-        <p className="mb-2 font-medium text-foreground">Demo accounts</p>
-        <div className="flex flex-col gap-1.5">
-          <button type="button" onClick={() => fillDemo("admin@demo.com")} className="text-left text-muted-foreground hover:text-primary">
-            admin@demo.com — Admin
-          </button>
-          <button type="button" onClick={() => fillDemo("publisher@demo.com")} className="text-left text-muted-foreground hover:text-primary">
-            publisher@demo.com — Publisher
-          </button>
-        </div>
-      </div>
     </AuthShell>
   );
 }

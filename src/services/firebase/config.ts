@@ -1,12 +1,10 @@
 /**
  * Firebase client SDK initialization for AdPulse.
  *
- * MODULE 2 — CONFIG PLUMBING ONLY. This file initializes the Firebase
- * app, Auth, Firestore, and Functions (pinned to region asia-south1),
- * and connects to local emulators during development. It is intentionally
- * NOT wired into the app's service layer yet — the dashboard still runs
- * entirely on the mock services in `src/services/mock`. The real service
- * swap happens in a later module.
+ * Initializes the Firebase app, Auth, Firestore, and Functions (pinned to
+ * region asia-south1). By default the app talks to PRODUCTION — including
+ * `npm run dev`. Set `VITE_USE_EMULATORS=true` in `.env` (and run the
+ * emulators) to route local dev traffic to the Firebase emulators instead.
  *
  * All values come from Vite env vars (see `.env.example`). Only the
  * public Firebase web config lives here — no secrets.
@@ -32,8 +30,9 @@ export const db = getFirestore(app);
 // Functions MUST be pinned to asia-south1 to match the deployed region.
 export const functions = getFunctions(app, "asia-south1");
 
-// In local development, route all SDK traffic to the Firebase emulators.
-if (import.meta.env.DEV) {
+// Opt-in: route SDK traffic to the local emulators (dev only). Without
+// VITE_USE_EMULATORS=true, dev and prod both use the live backend.
+if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === "true") {
   connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
   connectFirestoreEmulator(db, "localhost", 8080);
   connectFunctionsEmulator(functions, "localhost", 5001);
