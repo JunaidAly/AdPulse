@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="AdPulse — Publisher Revenue Dashboard">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0b0b12"/>
+      <stop offset="1" stop-color="#171427"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset="0.5" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="8" fill="url(#accent)"/>
+
+  <!-- logo mark -->
+  <g transform="translate(96 96)">
+    <rect width="120" height="120" rx="26" fill="url(#mark)"/>
+    <path d="M18 68 H38 L50 38 L62 86 L74 50 L84 68 H104"
+          fill="none" stroke="#ffffff" stroke-width="9"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="240" y="150" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="72" font-weight="800" fill="#ffffff">Ad<tspan fill="#a5b4fc">Pulse</tspan></text>
+  <text x="242" y="205" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" font-weight="500" fill="#9ca3af">Publisher Revenue Dashboard</text>
+
+  <text x="96" y="360" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="52" font-weight="700" fill="#e5e7eb">Track ad revenue. Manage sites.</text>
+  <text x="96" y="428" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="52" font-weight="700" fill="#e5e7eb">Process payouts — in real time.</text>
+
+  <text x="96" y="540" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="28" font-weight="500" fill="#8b8fa3">Google Ad Manager · eCPM · Revenue share · Payouts</text>
+</svg>
