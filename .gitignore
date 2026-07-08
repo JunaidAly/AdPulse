@@ -5,15 +5,13 @@ dist-ssr
 *.log
 
 # Local env / secrets (never commit) — keep .env.example tracked
-.env
-.env.*
 !.env.example
 
 # Editor
-.vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
 
 # TS build cache
 *.tsbuildinfo
+config.bat
