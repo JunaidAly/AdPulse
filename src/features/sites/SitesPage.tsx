@@ -8,6 +8,7 @@ import { SiteStatusBadge } from "@/components/common/StatusBadge";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TableSkeleton } from "@/components/common/LoadingSkeleton";
 import { AddSiteDialog } from "./AddSiteDialog";
+import { AdsTxtCell } from "./AdsTxtCell";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { fetchMySites } from "./sitesSlice";
 import { fetchReport } from "@/features/reports/reportsSlice";
@@ -64,6 +65,7 @@ export function SitesPage() {
                 <TableRow>
                   <TableHead>Domain</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>ads.txt</TableHead>
                   <TableHead>Added</TableHead>
                   <TableHead className="text-right">30-day revenue</TableHead>
                 </TableRow>
@@ -78,6 +80,13 @@ export function SitesPage() {
                     </TableCell>
                     <TableCell>
                       <SiteStatusBadge status={site.status} />
+                    </TableCell>
+                    <TableCell>
+                      {site.status === "approved" ? (
+                        <AdsTxtCell domain={site.domain} />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {format(parseISO(site.addedAt), "MMM d, yyyy")}

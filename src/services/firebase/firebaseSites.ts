@@ -13,7 +13,7 @@ import {
   where,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
-import type { Site, SitesService } from "@/services/api";
+import type { AdsTxtResult, Site, SitesService } from "@/services/api";
 import { db, functions } from "./config";
 import { errorMessage, toSite, type RawSite } from "./mappers";
 import { registerSites } from "@/services/realSiteRegistry";
@@ -31,6 +31,10 @@ const callReviewSite = httpsCallable<
   },
   RawSite & { id: string }
 >(functions, "adminReviewSite");
+const callCheckAdsTxt = httpsCallable<{ domain: string }, AdsTxtResult>(
+  functions,
+  "checkAdsTxt",
+);
 
 export const firebaseSites: SitesService = {
   async listByUser(userId: string): Promise<Site[]> {
@@ -99,5 +103,10 @@ export const firebaseSites: SitesService = {
     } catch (err) {
       throw new Error(errorMessage(err, "Could not reject site."));
     }
+  },
+
+  async checkAdsTxt(domain: string): Promise<AdsTxtResult> {
+    const res = await callCheckAdsTxt({ domain });
+    return res.data;
   },
 };

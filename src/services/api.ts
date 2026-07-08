@@ -191,6 +191,15 @@ export interface SitesService {
     revenueShare?: number,
   ): Promise<Site>;
   rejectSite(siteId: string): Promise<Site>;
+  /** Module 9 — checks a site's ads.txt for the GAM publisher line. */
+  checkAdsTxt?(domain: string): Promise<AdsTxtResult>;
+}
+
+export interface AdsTxtResult {
+  found: boolean;
+  hasRequiredLine: boolean;
+  url: string;
+  lineCount?: number;
 }
 
 export interface PayoutsService {
