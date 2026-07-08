@@ -39,7 +39,12 @@ const reportsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchDashboard.pending, (state) => {
-        state.dashboardStatus = "loading";
+        // Only show the loading skeleton on the very first fetch. Later
+        // dispatches (date-range change, background poll) already have
+        // data on screen — swap it in on fulfilled instead of flashing.
+        if (state.dashboardStatus !== "ready") {
+          state.dashboardStatus = "loading";
+        }
       })
       .addCase(fetchDashboard.fulfilled, (state, action) => {
         state.dashboardStatus = "ready";

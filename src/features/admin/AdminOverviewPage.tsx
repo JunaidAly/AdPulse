@@ -12,6 +12,7 @@ import { fetchDashboard } from "@/features/reports/reportsSlice";
 import { fetchUsers } from "./usersSlice";
 import { useAuth } from "@/hooks/useAuth";
 import { useDateRange } from "@/hooks/useDateRange";
+import { DASHBOARD_POLL_INTERVAL_MS } from "@/lib/constants";
 import { formatCompact, formatCurrency } from "@/lib/format";
 
 export function AdminOverviewPage() {
@@ -25,6 +26,11 @@ export function AdminOverviewPage() {
     if (!user) return;
     dispatch(fetchDashboard({ userId: user.id, role: user.role, from: range.from, to: range.to }));
     dispatch(fetchUsers());
+
+    const interval = setInterval(() => {
+      dispatch(fetchDashboard({ userId: user.id, role: user.role, from: range.from, to: range.to }));
+    }, DASHBOARD_POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
   }, [dispatch, user, range.from, range.to]);
 
   const loading = dashboardStatus !== "ready" || !dashboard;

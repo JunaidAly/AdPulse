@@ -62,3 +62,6 @@ export const USER_STATUS = {
 } as const;
 
 export type UserStatus = (typeof USER_STATUS)[keyof typeof USER_STATUS];
+
+/** How often the dashboard silently re-fetches in the background (ms). */
+export const DASHBOARD_POLL_INTERVAL_MS = 3 * 60 * 1000;
