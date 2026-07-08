@@ -44,27 +44,33 @@ export function DateRangePicker({ preset, label, range, onPreset, onCustom }: Da
         <DropdownMenuSeparator />
         <div className="space-y-2 p-2" onClick={(e) => e.stopPropagation()}>
           <Label className="text-xs text-muted-foreground">Custom range</Label>
-          <div className="flex items-center gap-2">
-            <Input
-              type="date"
-              value={range.from}
-              max={range.to}
-              onChange={(e) => {
-                onPreset("custom");
-                onCustom({ from: e.target.value, to: range.to });
-              }}
-              className="h-9 text-xs"
-            />
-            <Input
-              type="date"
-              value={range.to}
-              min={range.from}
-              onChange={(e) => {
-                onPreset("custom");
-                onCustom({ from: range.from, to: e.target.value });
-              }}
-              className="h-9 text-xs"
-            />
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <span className="text-[11px] text-muted-foreground">From</span>
+              <Input
+                type="date"
+                value={range.from}
+                max={range.to}
+                onChange={(e) => {
+                  onPreset("custom");
+                  onCustom({ from: e.target.value, to: range.to });
+                }}
+                className="h-9 w-full min-w-0 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] text-muted-foreground">To</span>
+              <Input
+                type="date"
+                value={range.to}
+                min={range.from}
+                onChange={(e) => {
+                  onPreset("custom");
+                  onCustom({ from: range.from, to: e.target.value });
+                }}
+                className="h-9 w-full min-w-0 text-xs"
+              />
+            </div>
           </div>
         </div>
       </DropdownMenuContent>
