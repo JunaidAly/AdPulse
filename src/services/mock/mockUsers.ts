@@ -47,4 +47,12 @@ export const mockUsers: UsersService = {
     user.legal = { ...legal };
     return delay({ ...user });
   },
+
+  async deleteUser(userId: string) {
+    const ownerId = resolveUserId(userId);
+    const idx = db.users.findIndex((u) => u.id === ownerId);
+    if (idx !== -1) db.users.splice(idx, 1);
+    db.sites = db.sites.filter((s) => s.ownerId !== ownerId);
+    return delay(undefined);
+  },
 };

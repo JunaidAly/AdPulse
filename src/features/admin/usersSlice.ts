@@ -28,6 +28,11 @@ export const updateUserStatus = createAsyncThunk(
     services.users.updateStatus(args.userId, args.status),
 );
 
+export const deleteUser = createAsyncThunk("users/delete", async (userId: string) => {
+  await services.users.deleteUser(userId);
+  return userId;
+});
+
 function replace(items: User[], user: User): User[] {
   return items.map((u) => (u.id === user.id ? user : u));
 }
@@ -54,6 +59,9 @@ const usersSlice = createSlice({
       })
       .addCase(updateUserStatus.fulfilled, (state, action) => {
         state.items = replace(state.items, action.payload);
+      })
+      .addCase(deleteUser.fulfilled, (state, action) => {
+        state.items = state.items.filter((u) => u.id !== action.payload);
       });
   },
 });

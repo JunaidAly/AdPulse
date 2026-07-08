@@ -39,4 +39,9 @@ export const mockSites: SitesService = {
     site.status = SITE_STATUS.REJECTED;
     return delay({ ...site });
   },
+
+  async deleteSite(siteId: string): Promise<void> {
+    db.sites = db.sites.filter((s) => s.id !== siteId);
+    return delay(undefined);
+  },
 };

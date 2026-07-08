@@ -25,6 +25,10 @@ const callAdminUpdateUser = httpsCallable<
   { uid: string; revenueShare?: number; status?: string },
   RawUser & { id: string }
 >(functions, "adminUpdateUser");
+const callAdminDeleteUser = httpsCallable<
+  { uid: string },
+  { uid: string; deleted: boolean; sitesDeleted: number }
+>(functions, "adminDeleteUser");
 
 async function readUser(userId: string): Promise<User> {
   const snap = await getDoc(doc(db, "users", userId));
@@ -92,5 +96,13 @@ export const firebaseUsers: UsersService = {
       updatedAt: serverTimestamp(),
     });
     return readUser(userId);
+  },
+
+  async deleteUser(userId: string): Promise<void> {
+    try {
+      await callAdminDeleteUser({ uid: userId });
+    } catch (err) {
+      throw new Error(errorMessage(err, "Could not delete user."));
+    }
   },
 };

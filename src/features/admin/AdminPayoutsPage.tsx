@@ -10,6 +10,8 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { TableSkeleton } from "@/components/common/LoadingSkeleton";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { fetchAllPayouts, processPayout } from "@/features/payments/paymentsSlice";
+import { fetchUsers } from "./usersSlice";
+import { LogPayoutDialog } from "./LogPayoutDialog";
 import { PAYOUT_METHOD_LABELS, PAYOUT_STATUS } from "@/lib/constants";
 import { formatCurrency } from "@/lib/format";
 
@@ -19,6 +21,7 @@ export function AdminPayoutsPage() {
 
   useEffect(() => {
     dispatch(fetchAllPayouts());
+    dispatch(fetchUsers());
   }, [dispatch]);
 
   const loading = status !== "ready";
@@ -45,11 +48,16 @@ export function AdminPayoutsPage() {
     <>
       <PageHeader
         title="Payouts"
-        description="Approve pending payout requests across all publishers."
+        description="Log publisher payments and review payout history."
         actions={
-          <span className="rounded-lg bg-warning/15 px-3 py-1.5 text-sm font-medium text-warning">
-            {formatCurrency(pendingTotal)} pending
-          </span>
+          <div className="flex items-center gap-3">
+            {pendingTotal > 0 && (
+              <span className="rounded-lg bg-warning/15 px-3 py-1.5 text-sm font-medium text-warning">
+                {formatCurrency(pendingTotal)} pending
+              </span>
+            )}
+            <LogPayoutDialog />
+          </div>
         }
       />
 

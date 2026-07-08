@@ -191,6 +191,8 @@ export interface SitesService {
     revenueShare?: number,
   ): Promise<Site>;
   rejectSite(siteId: string): Promise<Site>;
+  /** Admin-only: removes the site doc. Historical revenue rows are kept. */
+  deleteSite(siteId: string): Promise<void>;
   /** Module 9 — checks a site's ads.txt for the GAM publisher line. */
   checkAdsTxt?(domain: string): Promise<AdsTxtResult>;
 }
@@ -211,9 +213,17 @@ export interface PayoutsService {
   savePayoutDetails(userId: string, details: PayoutDetails): Promise<User>;
   /** Module 8 — real payout flow (optional; mock backend omits these). */
   getPayoutHistory?(): Promise<PayoutHistory>;
-  requestPayout?(
+  /**
+   * Admin-only: logs a payout that was already paid externally (bank
+   * transfer, USDT, etc). There is no publisher self-service request flow —
+   * this is how payout records get created. amountCents defaults to the
+   * publisher's current balance when omitted.
+   */
+  adminLogPayout?(
+    userId: string,
     periodStart: string,
     periodEnd: string,
+    amountCents?: number,
   ): Promise<{ payoutId: string; amountCents: number; method: PayoutMethod }>;
   adminProcessPayout?(
     payoutId: string,
@@ -229,6 +239,8 @@ export interface UsersService {
   getRawMonthlyRevenueCents(userId: string): Promise<number>;
   updateAccount(userId: string, patch: { name?: string; email?: string }): Promise<User>;
   updateLegal(userId: string, legal: LegalInfo): Promise<User>;
+  /** Admin-only hard delete: Auth account + user doc + all their sites. */
+  deleteUser(userId: string): Promise<void>;
 }
 
 export interface Services {

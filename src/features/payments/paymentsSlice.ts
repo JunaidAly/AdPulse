@@ -8,7 +8,7 @@ interface PaymentsState {
   pendingCents: number;
   status: "idle" | "loading" | "ready" | "error";
   saving: boolean;
-  requesting: boolean;
+  logging: boolean;
   error: string | null;
 }
 
@@ -19,7 +19,7 @@ const initialState: PaymentsState = {
   pendingCents: 0,
   status: "idle",
   saving: false,
-  requesting: false,
+  logging: false,
   error: null,
 };
 
@@ -32,10 +32,15 @@ export const fetchAllPayouts = createAsyncThunk("payments/fetchAll", async () =>
   (await services.payouts.getPayoutHistory!()).payouts,
 );
 
-export const requestPayout = createAsyncThunk(
-  "payments/request",
-  (args: { periodStart: string; periodEnd: string }) =>
-    services.payouts.requestPayout!(args.periodStart, args.periodEnd),
+export const adminLogPayout = createAsyncThunk(
+  "payments/adminLog",
+  (args: { userId: string; periodStart: string; periodEnd: string; amountCents?: number }) =>
+    services.payouts.adminLogPayout!(
+      args.userId,
+      args.periodStart,
+      args.periodEnd,
+      args.amountCents,
+    ),
 );
 
 export const processPayout = createAsyncThunk(
@@ -81,16 +86,16 @@ const paymentsSlice = createSlice({
         const p = state.payouts.find((x) => x.id === action.payload.payoutId);
         if (p) p.status = action.payload.newStatus;
       })
-      .addCase(requestPayout.pending, (state) => {
-        state.requesting = true;
+      .addCase(adminLogPayout.pending, (state) => {
+        state.logging = true;
         state.error = null;
       })
-      .addCase(requestPayout.fulfilled, (state) => {
-        state.requesting = false;
+      .addCase(adminLogPayout.fulfilled, (state) => {
+        state.logging = false;
       })
-      .addCase(requestPayout.rejected, (state, action) => {
-        state.requesting = false;
-        state.error = action.error.message ?? "Payout request failed";
+      .addCase(adminLogPayout.rejected, (state, action) => {
+        state.logging = false;
+        state.error = action.error.message ?? "Could not log payout";
       })
       .addCase(savePayoutDetails.pending, (state) => {
         state.saving = true;

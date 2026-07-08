@@ -43,10 +43,10 @@ const callGetPayoutHistory = httpsCallable<Record<string, never>, HistoryRespons
   functions,
   "getPayoutHistory",
 );
-const callRequestPayout = httpsCallable<
-  { periodStart: string; periodEnd: string },
+const callAdminLogPayout = httpsCallable<
+  { uid: string; periodStart: string; periodEnd: string; amountCents?: number },
   { payoutId: string; amountCents: number; method: string }
->(functions, "requestPayout");
+>(functions, "adminLogPayout");
 const callAdminProcessPayout = httpsCallable<
   { payoutId: string; action: "approve" | "reject" },
   { payoutId: string; newStatus: string }
@@ -92,16 +92,21 @@ export const firebasePayouts: PayoutsService = {
   // --- Module 8 primary methods ---
   getPayoutHistory: history,
 
-  async requestPayout(periodStart, periodEnd) {
+  async adminLogPayout(userId, periodStart, periodEnd, amountCents) {
     try {
-      const res = await callRequestPayout({ periodStart, periodEnd });
+      const res = await callAdminLogPayout({
+        uid: userId,
+        periodStart,
+        periodEnd,
+        ...(amountCents !== undefined ? { amountCents } : {}),
+      });
       return {
         payoutId: res.data.payoutId,
         amountCents: res.data.amountCents,
         method: res.data.method as PayoutMethod,
       };
     } catch (err) {
-      throw new Error(errorMessage(err, "Could not request payout."));
+      throw new Error(errorMessage(err, "Could not log payout."));
     }
   },
 

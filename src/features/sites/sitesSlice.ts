@@ -39,6 +39,11 @@ export const rejectSite = createAsyncThunk("sites/reject", (siteId: string) =>
   services.sites.rejectSite(siteId),
 );
 
+export const deleteSite = createAsyncThunk("sites/delete", async (siteId: string) => {
+  await services.sites.deleteSite(siteId);
+  return siteId;
+});
+
 function upsert(items: Site[], site: Site): Site[] {
   const idx = items.findIndex((s) => s.id === site.id);
   if (idx === -1) return [...items, site];
@@ -83,6 +88,9 @@ const sitesSlice = createSlice({
       })
       .addCase(rejectSite.fulfilled, (state, action) => {
         state.items = upsert(state.items, action.payload);
+      })
+      .addCase(deleteSite.fulfilled, (state, action) => {
+        state.items = state.items.filter((s) => s.id !== action.payload);
       });
   },
 });

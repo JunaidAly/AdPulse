@@ -35,6 +35,10 @@ const callCheckAdsTxt = httpsCallable<{ domain: string }, AdsTxtResult>(
   functions,
   "checkAdsTxt",
 );
+const callDeleteSite = httpsCallable<
+  { siteId: string },
+  { siteId: string; deleted: boolean }
+>(functions, "adminDeleteSite");
 
 export const firebaseSites: SitesService = {
   async listByUser(userId: string): Promise<Site[]> {
@@ -108,5 +112,13 @@ export const firebaseSites: SitesService = {
   async checkAdsTxt(domain: string): Promise<AdsTxtResult> {
     const res = await callCheckAdsTxt({ domain });
     return res.data;
+  },
+
+  async deleteSite(siteId: string): Promise<void> {
+    try {
+      await callDeleteSite({ siteId });
+    } catch (err) {
+      throw new Error(errorMessage(err, "Could not delete site."));
+    }
   },
 };
