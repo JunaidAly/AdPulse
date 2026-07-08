@@ -7,16 +7,19 @@
  * recomputed with the same lib/format helpers the mock used, for exact
  * contract parity. No artificial delay.
  *
- * Note: reports_raw only has date×site metrics — device mix, top countries,
- * viewability, and match rate are not available from GAM's current report
- * (returned empty / 0). Those need extra GAM dimensions (future module).
+ * Device mix / Top countries come from the separate `getBreakdown`
+ * callable (reports_breakdown collection) — kept apart from the revenue-
+ * critical getReports path. Match rate is still not available from GAM's
+ * current report (returned 0).
  */
 import { differenceInCalendarDays, format, parseISO, subDays } from "date-fns";
 import { httpsCallable } from "firebase/functions";
 import type {
+  CountrySlice,
   DashboardData,
   DashboardQuery,
   DashboardSummary,
+  DeviceSlice,
   ReportQuery,
   ReportRow,
   ReportsService,
@@ -69,6 +72,16 @@ export const callGetReports = httpsCallable<
   GetReportsResponse
 >(functions, "getReports");
 
+interface GetBreakdownResponse {
+  deviceMix: DeviceSlice[];
+  topCountries: CountrySlice[];
+}
+
+const callGetBreakdown = httpsCallable<
+  { startDate: string; endDate: string; siteIds?: string[] },
+  GetBreakdownResponse
+>(functions, "getBreakdown");
+
 async function fetchRange(
   from: string,
   to: string,
@@ -83,6 +96,15 @@ async function fetchRange(
     return res.data;
   } catch (err) {
     throw new Error(errorMessage(err, "Could not load reports."));
+  }
+}
+
+async function fetchBreakdown(from: string, to: string): Promise<GetBreakdownResponse> {
+  try {
+    const res = await callGetBreakdown({ startDate: from, endDate: to });
+    return res.data;
+  } catch (err) {
+    throw new Error(errorMessage(err, "Could not load device/country breakdown."));
   }
 }
 
@@ -164,9 +186,13 @@ export const firebaseReports: ReportsService = {
       "yyyy-MM-dd",
     );
 
-    const [current, previous] = await Promise.all([
+    const [current, previous, breakdown] = await Promise.all([
       fetchRange(query.from, query.to),
       fetchRange(prevFrom, prevTo),
+      fetchBreakdown(query.from, query.to).catch(() => ({
+        deviceMix: [] as DeviceSlice[],
+        topCountries: [] as CountrySlice[],
+      })),
     ]);
 
     // Timeseries grouped by date.
@@ -242,6 +268,12 @@ export const firebaseReports: ReportsService = {
       activeSites: current.sites.length,
     };
 
-    return { summary, timeseries, siteBreakdown, deviceMix: [], topCountries: [] };
+    return {
+      summary,
+      timeseries,
+      siteBreakdown,
+      deviceMix: breakdown.deviceMix,
+      topCountries: breakdown.topCountries,
+    };
   },
 };
