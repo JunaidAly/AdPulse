@@ -36,6 +36,8 @@ export interface GetReportsRow {
   revenueCents: number;
   eCPM: number;
   CTR: number;
+  viewableImpressions: number;
+  measurableImpressions: number;
   ownerUid?: string;
   ownerEmail?: string;
 }
@@ -48,6 +50,8 @@ export interface GetReportsResponse {
     revenueCents: number;
     eCPM: number;
     CTR: number;
+    viewableImpressions: number;
+    measurableImpressions: number;
     byOwner?: {
       uid: string;
       ownerEmail: string;
@@ -86,9 +90,14 @@ interface Acc {
   impressions: number;
   clicks: number;
   revenueCents: number;
+  viewable: number;
+  measurable: number;
 }
 function emptyAcc(): Acc {
-  return { impressions: 0, clicks: 0, revenueCents: 0 };
+  return { impressions: 0, clicks: 0, revenueCents: 0, viewable: 0, measurable: 0 };
+}
+function viewRate(viewable: number, measurable: number): number {
+  return measurable > 0 ? viewable / measurable : 0;
 }
 
 function deltaRatio(current: number, previous: number): number {
@@ -110,6 +119,8 @@ export const firebaseReports: ReportsService = {
       g.impressions += r.impressions;
       g.clicks += r.clicks;
       g.revenueCents += r.revenueCents;
+      g.viewable += r.viewableImpressions;
+      g.measurable += r.measurableImpressions;
       groups.set(key, g);
     }
 
@@ -123,7 +134,7 @@ export const firebaseReports: ReportsService = {
       revenueCents: g.revenueCents,
       ecpmCents: computeEcpmCents(g.revenueCents, g.impressions),
       ctr: computeCtr(g.clicks, g.impressions),
-      viewability: 0,
+      viewability: viewRate(g.viewable, g.measurable),
     }));
 
     const totals: ReportTotals = {
@@ -135,7 +146,10 @@ export const firebaseReports: ReportsService = {
         data.summary.impressions,
       ),
       ctr: computeCtr(data.summary.clicks, data.summary.impressions),
-      viewability: 0,
+      viewability: viewRate(
+        data.summary.viewableImpressions,
+        data.summary.measurableImpressions,
+      ),
     };
 
     return { rows, totals };
@@ -181,6 +195,8 @@ export const firebaseReports: ReportsService = {
       g.impressions += r.impressions;
       g.clicks += r.clicks;
       g.revenueCents += r.revenueCents;
+      g.viewable += r.viewableImpressions;
+      g.measurable += r.measurableImpressions;
       bySite.set(r.siteId, g);
     }
     const siteBreakdown: ReportRow[] = [...bySite.entries()]
@@ -193,7 +209,7 @@ export const firebaseReports: ReportsService = {
         revenueCents: g.revenueCents,
         ecpmCents: computeEcpmCents(g.revenueCents, g.impressions),
         ctr: computeCtr(g.clicks, g.impressions),
-        viewability: 0,
+        viewability: viewRate(g.viewable, g.measurable),
       }))
       .sort((a, b) => b.revenueCents - a.revenueCents);
 
@@ -203,6 +219,11 @@ export const firebaseReports: ReportsService = {
     const prevEcpm = computeEcpmCents(prev.revenueCents, prev.impressions);
     const curCtr = computeCtr(cur.clicks, cur.impressions);
     const prevCtr = computeCtr(prev.clicks, prev.impressions);
+    const curView = viewRate(cur.viewableImpressions, cur.measurableImpressions);
+    const prevView = viewRate(
+      prev.viewableImpressions,
+      prev.measurableImpressions,
+    );
 
     const summary: DashboardSummary = {
       revenueCents: {
@@ -215,8 +236,7 @@ export const firebaseReports: ReportsService = {
       },
       ecpmCents: { value: curEcpm, delta: deltaRatio(curEcpm, prevEcpm) },
       ctr: { value: curCtr, delta: deltaRatio(curCtr, prevCtr) },
-      // Not available from GAM's date×site report yet.
-      viewability: { value: 0, delta: 0 },
+      viewability: { value: curView, delta: deltaRatio(curView, prevView) },
       clicks: cur.clicks,
       matchRate: 0,
       activeSites: current.sites.length,
