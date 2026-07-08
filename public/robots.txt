@@ -13,4 +13,4 @@ Disallow: /profile
 Disallow: /admin
 Disallow: /forgot-password
 
-Sitemap: https://adpulse.netlify.app/sitemap.xml
+Sitemap: https://adpulse.monetize360.eu/sitemap.xml
