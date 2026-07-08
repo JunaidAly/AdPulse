@@ -1,0 +1,16 @@
+# AdPulse robots.txt
+# Public marketing/auth pages are crawlable; the authenticated app is not.
+
+User-agent: *
+Allow: /$
+Allow: /login
+Allow: /register
+Disallow: /dashboard
+Disallow: /reports
+Disallow: /sites
+Disallow: /payments
+Disallow: /profile
+Disallow: /admin
+Disallow: /forgot-password
+
+Sitemap: https://adpulse.netlify.app/sitemap.xml
