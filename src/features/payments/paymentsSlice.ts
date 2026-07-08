@@ -4,33 +4,44 @@ import { services, type Payout, type PayoutDetails } from "@/services";
 interface PaymentsState {
   payouts: Payout[];
   balanceCents: number;
+  totalPaidCents: number;
+  pendingCents: number;
   status: "idle" | "loading" | "ready" | "error";
   saving: boolean;
+  requesting: boolean;
   error: string | null;
 }
 
 const initialState: PaymentsState = {
   payouts: [],
   balanceCents: 0,
+  totalPaidCents: 0,
+  pendingCents: 0,
   status: "idle",
   saving: false,
+  requesting: false,
   error: null,
 };
 
-export const fetchMyPayouts = createAsyncThunk("payments/fetchMine", async (userId: string) => {
-  const [payouts, balanceCents] = await Promise.all([
-    services.payouts.listByUser(userId),
-    services.payouts.getBalanceCents(userId),
-  ]);
-  return { payouts, balanceCents };
-});
-
-export const fetchAllPayouts = createAsyncThunk("payments/fetchAll", () =>
-  services.payouts.listAll(),
+// userId kept for call-site compatibility; the callable uses the auth uid.
+export const fetchMyPayouts = createAsyncThunk("payments/fetchMine", () =>
+  services.payouts.getPayoutHistory!(),
 );
 
-export const markPayoutPaid = createAsyncThunk("payments/markPaid", (payoutId: string) =>
-  services.payouts.markPaid(payoutId),
+export const fetchAllPayouts = createAsyncThunk("payments/fetchAll", async () =>
+  (await services.payouts.getPayoutHistory!()).payouts,
+);
+
+export const requestPayout = createAsyncThunk(
+  "payments/request",
+  (args: { periodStart: string; periodEnd: string }) =>
+    services.payouts.requestPayout!(args.periodStart, args.periodEnd),
+);
+
+export const processPayout = createAsyncThunk(
+  "payments/process",
+  (args: { payoutId: string; action: "approve" | "reject" }) =>
+    services.payouts.adminProcessPayout!(args.payoutId, args.action),
 );
 
 export const savePayoutDetails = createAsyncThunk(
@@ -52,6 +63,12 @@ const paymentsSlice = createSlice({
         state.status = "ready";
         state.payouts = action.payload.payouts;
         state.balanceCents = action.payload.balanceCents;
+        state.totalPaidCents = action.payload.totalPaidCents;
+        state.pendingCents = action.payload.pendingCents;
+      })
+      .addCase(fetchMyPayouts.rejected, (state, action) => {
+        state.status = "error";
+        state.error = action.error.message ?? "Failed to load payouts";
       })
       .addCase(fetchAllPayouts.pending, (state) => {
         state.status = "loading";
@@ -60,9 +77,20 @@ const paymentsSlice = createSlice({
         state.status = "ready";
         state.payouts = action.payload;
       })
-      .addCase(markPayoutPaid.fulfilled, (state, action) => {
-        const idx = state.payouts.findIndex((p) => p.id === action.payload.id);
-        if (idx !== -1) state.payouts[idx] = action.payload;
+      .addCase(processPayout.fulfilled, (state, action) => {
+        const p = state.payouts.find((x) => x.id === action.payload.payoutId);
+        if (p) p.status = action.payload.newStatus;
+      })
+      .addCase(requestPayout.pending, (state) => {
+        state.requesting = true;
+        state.error = null;
+      })
+      .addCase(requestPayout.fulfilled, (state) => {
+        state.requesting = false;
+      })
+      .addCase(requestPayout.rejected, (state, action) => {
+        state.requesting = false;
+        state.error = action.error.message ?? "Payout request failed";
       })
       .addCase(savePayoutDetails.pending, (state) => {
         state.saving = true;

@@ -59,6 +59,7 @@ function mapPayout(
   const details: PayoutDetails = { method: method.type };
   if (method.walletAddress) details.walletAddress = method.walletAddress;
   if (method.bankName) details.bankName = method.bankName;
+  if (method.accountTitle) details.accountTitle = method.accountTitle;
   if (method.iban) details.iban = method.iban;
   return details;
 }

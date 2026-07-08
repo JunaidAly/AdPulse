@@ -7,6 +7,7 @@ import { PayoutStatusBadge } from "@/components/common/StatusBadge";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TableSkeleton } from "@/components/common/LoadingSkeleton";
 import { PayoutMethodForm } from "./PayoutMethodForm";
+import { RequestPayoutDialog } from "./RequestPayoutDialog";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { fetchMyPayouts } from "./paymentsSlice";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,13 +17,16 @@ import { formatCurrency } from "@/lib/format";
 export function PaymentsPage() {
   const dispatch = useAppDispatch();
   const { user } = useAuth();
-  const { payouts, balanceCents, status } = useAppSelector((s) => s.payments);
+  const { payouts, balanceCents, pendingCents, status } = useAppSelector(
+    (s) => s.payments,
+  );
 
   useEffect(() => {
-    if (user) dispatch(fetchMyPayouts(user.id));
+    if (user) dispatch(fetchMyPayouts());
   }, [dispatch, user]);
 
   const ready = status === "ready";
+  const hasPending = pendingCents > 0;
   const eligible = balanceCents >= PAYOUT_MINIMUM_CENTS;
 
   return (
@@ -94,13 +98,18 @@ export function PaymentsPage() {
               <p className="mt-3 text-sm text-muted-foreground">
                 Payouts are processed when your balance exceeds {formatCurrency(PAYOUT_MINIMUM_CENTS)}.
               </p>
-              {eligible ? (
+              {hasPending ? (
+                <p className="mt-3 text-sm font-medium text-warning">
+                  You have a pending payout awaiting review.
+                </p>
+              ) : eligible ? (
                 <p className="mt-3 text-sm font-medium text-success">You're eligible for the next payout.</p>
               ) : (
                 <p className="mt-3 text-sm text-muted-foreground">
                   {formatCurrency(PAYOUT_MINIMUM_CENTS - balanceCents)} to go until your next payout.
                 </p>
               )}
+              {ready && <RequestPayoutDialog disabled={!eligible || hasPending} />}
             </CardContent>
           </Card>
         </div>

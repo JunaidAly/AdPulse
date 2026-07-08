@@ -14,11 +14,11 @@ export function SiteStatusBadge({ status }: { status: SiteStatus }) {
 }
 
 export function PayoutStatusBadge({ status }: { status: PayoutStatus }) {
-  return status === PAYOUT_STATUS.PAID ? (
-    <Badge variant="success">Paid</Badge>
-  ) : (
-    <Badge variant="warning">Pending</Badge>
-  );
+  if (status === PAYOUT_STATUS.PAID) return <Badge variant="success">Paid</Badge>;
+  if (status === PAYOUT_STATUS.REJECTED) {
+    return <Badge variant="destructive">Rejected</Badge>;
+  }
+  return <Badge variant="warning">Pending</Badge>;
 }
 
 export function UserStatusBadge({ status }: { status: UserStatus }) {

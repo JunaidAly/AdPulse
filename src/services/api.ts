@@ -25,8 +25,16 @@ export interface PayoutDetails {
   method: PayoutMethod;
   walletAddress?: string;
   bankName?: string;
+  accountTitle?: string;
   bankAccount?: string;
   iban?: string;
+}
+
+export interface PayoutHistory {
+  payouts: Payout[];
+  balanceCents: number;
+  totalPaidCents: number;
+  pendingCents: number;
 }
 
 export interface User {
@@ -192,6 +200,16 @@ export interface PayoutsService {
   getBalanceCents(userId: string): Promise<number>;
   markPaid(payoutId: string): Promise<Payout>;
   savePayoutDetails(userId: string, details: PayoutDetails): Promise<User>;
+  /** Module 8 — real payout flow (optional; mock backend omits these). */
+  getPayoutHistory?(): Promise<PayoutHistory>;
+  requestPayout?(
+    periodStart: string,
+    periodEnd: string,
+  ): Promise<{ payoutId: string; amountCents: number; method: PayoutMethod }>;
+  adminProcessPayout?(
+    payoutId: string,
+    action: "approve" | "reject",
+  ): Promise<{ payoutId: string; newStatus: PayoutStatus }>;
 }
 
 export interface UsersService {

@@ -18,6 +18,7 @@ const schema = z
     method: z.enum([PAYOUT_METHODS.USDT, PAYOUT_METHODS.BANK]),
     walletAddress: z.string().optional(),
     bankName: z.string().optional(),
+    accountTitle: z.string().optional(),
     iban: z.string().optional(),
   })
   .superRefine((v, ctx) => {
@@ -26,6 +27,7 @@ const schema = z
     }
     if (v.method === PAYOUT_METHODS.BANK) {
       if (!v.bankName?.trim()) ctx.addIssue({ code: "custom", path: ["bankName"], message: "Bank name is required" });
+      if (!v.accountTitle?.trim()) ctx.addIssue({ code: "custom", path: ["accountTitle"], message: "Account title is required" });
       if (!v.iban?.trim()) ctx.addIssue({ code: "custom", path: ["iban"], message: "IBAN / account is required" });
     }
   });
@@ -48,6 +50,7 @@ export function PayoutMethodForm() {
       method: user?.payout?.method ?? PAYOUT_METHODS.USDT,
       walletAddress: user?.payout?.walletAddress ?? "",
       bankName: user?.payout?.bankName ?? "",
+      accountTitle: user?.payout?.accountTitle ?? "",
       iban: user?.payout?.iban ?? "",
     },
   });
@@ -60,6 +63,7 @@ export function PayoutMethodForm() {
     if (values.method === PAYOUT_METHODS.USDT) details.walletAddress = values.walletAddress;
     else {
       details.bankName = values.bankName;
+      details.accountTitle = values.accountTitle;
       details.iban = values.iban;
     }
     const result = await dispatch(savePayoutDetails({ userId: user.id, details }));
@@ -100,6 +104,11 @@ export function PayoutMethodForm() {
             {errors.bankName && <p className="text-xs text-destructive">{errors.bankName.message}</p>}
           </div>
           <div className="space-y-1.5">
+            <Label htmlFor="accountTitle">Account title</Label>
+            <Input id="accountTitle" placeholder="Account holder name" {...register("accountTitle")} />
+            {errors.accountTitle && <p className="text-xs text-destructive">{errors.accountTitle.message}</p>}
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="iban">IBAN / account</Label>
             <Input id="iban" placeholder="IBAN or account number" {...register("iban")} />
             {errors.iban && <p className="text-xs text-destructive">{errors.iban.message}</p>}

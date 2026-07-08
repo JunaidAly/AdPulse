@@ -51,6 +51,7 @@ export type SiteStatus = (typeof SITE_STATUS)[keyof typeof SITE_STATUS];
 export const PAYOUT_STATUS = {
   PENDING: "pending",
   PAID: "paid",
+  REJECTED: "rejected",
 } as const;
 
 export type PayoutStatus = (typeof PAYOUT_STATUS)[keyof typeof PAYOUT_STATUS];

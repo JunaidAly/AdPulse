@@ -9,7 +9,7 @@ import { PayoutStatusBadge } from "@/components/common/StatusBadge";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TableSkeleton } from "@/components/common/LoadingSkeleton";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
-import { fetchAllPayouts, markPayoutPaid } from "@/features/payments/paymentsSlice";
+import { fetchAllPayouts, processPayout } from "@/features/payments/paymentsSlice";
 import { PAYOUT_METHOD_LABELS, PAYOUT_STATUS } from "@/lib/constants";
 import { formatCurrency } from "@/lib/format";
 
@@ -26,9 +26,19 @@ export function AdminPayoutsPage() {
     .filter((p) => p.status === PAYOUT_STATUS.PENDING)
     .reduce((s, p) => s + p.amountCents, 0);
 
-  const handlePay = async (id: string, name: string) => {
-    await dispatch(markPayoutPaid(id));
-    toast.success(`Payout to ${name} marked as paid`);
+  const handleProcess = async (
+    id: string,
+    name: string,
+    action: "approve" | "reject",
+  ) => {
+    const result = await dispatch(processPayout({ payoutId: id, action }));
+    if (processPayout.fulfilled.match(result)) {
+      toast.success(
+        `Payout to ${name} ${action === "approve" ? "marked as paid" : "rejected"}`,
+      );
+    } else {
+      toast.error(result.error?.message ?? "Could not process payout");
+    }
   };
 
   return (
@@ -75,9 +85,21 @@ export function AdminPayoutsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       {p.status === PAYOUT_STATUS.PENDING ? (
-                        <Button size="sm" onClick={() => handlePay(p.id, p.userName)}>
-                          Mark paid
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleProcess(p.id, p.userName, "approve")}
+                          >
+                            Mark paid
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleProcess(p.id, p.userName, "reject")}
+                          >
+                            Reject
+                          </Button>
+                        </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">
                           {format(parseISO(p.createdAt), "MMM d, yyyy")}
