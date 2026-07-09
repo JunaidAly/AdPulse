@@ -19,7 +19,7 @@ export function DeviceMix({ data }: { data: DeviceSlice[] }) {
       <CardHeader>
         <CardTitle className="text-base">Device mix</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="h-52 space-y-3 overflow-y-auto scrollbar-hide">
         {data.map((d) => {
           const Icon = DEVICE_ICONS[d.device] ?? Smartphone;
           return (
@@ -47,7 +47,7 @@ export function TopCountries({ data }: { data: CountrySlice[] }) {
       <CardHeader>
         <CardTitle className="text-base">Top countries</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="h-48 space-y-3 overflow-y-auto scrollbar-hide">
         {data.map((c) => (
           <div key={c.code} className="flex items-center justify-between text-sm">
             <span className="flex items-center gap-2">
@@ -89,7 +89,7 @@ export function SummaryCard({
       <CardHeader>
         <CardTitle className="text-base">Summary</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="h-48 space-y-3 overflow-y-auto scrollbar-hide">
         {rows.map(([label, value]) => (
           <div key={label} className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">{label}</span>
