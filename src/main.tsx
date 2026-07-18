@@ -11,12 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./index.css";
 
-/**
- * Subscribes to the Firebase auth session for the app's lifetime and mirrors
- * it into Redux. The first callback flips `auth.initialized`, releasing the
- * route guards. Stays firebase-ignorant: `subscribeToSession` comes from the
- * service layer, not the firebase SDK.
- */
+
 function AppRoot() {
   const dispatch = useAppDispatch();
   useEffect(
