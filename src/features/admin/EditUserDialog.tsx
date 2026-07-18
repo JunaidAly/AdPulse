@@ -16,7 +16,15 @@ import { Slider } from "@/components/ui/slider";
 import { useAppDispatch } from "@/app/hooks";
 import { updateRevenueShare, updateUserStatus } from "./usersSlice";
 import { services, type User } from "@/services";
-import { REVENUE_SHARE_MAX, REVENUE_SHARE_MIN, REVENUE_SHARE_STEP, USER_STATUS, type UserStatus } from "@/lib/constants";
+import {
+  PAYOUT_METHODS,
+  PAYOUT_METHOD_LABELS,
+  REVENUE_SHARE_MAX,
+  REVENUE_SHARE_MIN,
+  REVENUE_SHARE_STEP,
+  USER_STATUS,
+  type UserStatus,
+} from "@/lib/constants";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -113,6 +121,41 @@ export function EditUserDialog({ user, onClose }: EditUserDialogProps) {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="rounded-lg border p-3">
+            <p className="mb-2 text-sm font-medium">Payout method</p>
+            {!user.payout ? (
+              <p className="text-xs text-muted-foreground">Not set yet.</p>
+            ) : (
+              <div className="space-y-1 text-xs">
+                <p>
+                  <span className="text-muted-foreground">Method: </span>
+                  {PAYOUT_METHOD_LABELS[user.payout.method]}
+                </p>
+                {user.payout.method === PAYOUT_METHODS.USDT ? (
+                  <p className="break-all">
+                    <span className="text-muted-foreground">Wallet (ERC-20): </span>
+                    {user.payout.walletAddress ?? "—"}
+                  </p>
+                ) : (
+                  <>
+                    <p>
+                      <span className="text-muted-foreground">Bank: </span>
+                      {user.payout.bankName ?? "—"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Account title: </span>
+                      {user.payout.accountTitle ?? "—"}
+                    </p>
+                    <p className="break-all">
+                      <span className="text-muted-foreground">IBAN: </span>
+                      {user.payout.iban ?? "—"}
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between rounded-lg border p-3">

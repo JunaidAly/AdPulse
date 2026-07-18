@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,15 +36,47 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 
+/** Read-only summary shown once a payout method is on file. */
+function PayoutMethodView({ payout, onEdit }: { payout: PayoutDetails; onEdit: () => void }) {
+  const rows =
+    payout.method === PAYOUT_METHODS.USDT
+      ? [["USDT wallet address (ERC-20)", payout.walletAddress ?? "—"]]
+      : [
+          ["Bank name", payout.bankName ?? "—"],
+          ["Account title", payout.accountTitle ?? "—"],
+          ["IBAN / account", payout.iban ?? "—"],
+        ];
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <Label>Method</Label>
+        <p className="text-sm font-medium">{PAYOUT_METHOD_LABELS[payout.method]}</p>
+      </div>
+      {rows.map(([label, value]) => (
+        <div key={label} className="space-y-1.5">
+          <Label>{label}</Label>
+          <p className="break-all text-sm font-medium">{value}</p>
+        </div>
+      ))}
+      <Button type="button" variant="outline" onClick={onEdit} className="gap-2">
+        <Pencil className="h-3.5 w-3.5" /> Edit
+      </Button>
+    </div>
+  );
+}
+
 export function PayoutMethodForm() {
   const dispatch = useAppDispatch();
   const { user } = useAuth();
+  const [editing, setEditing] = useState(!user?.payout);
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -70,10 +104,29 @@ export function PayoutMethodForm() {
     if (savePayoutDetails.fulfilled.match(result)) {
       dispatch(setPayout(details));
       toast.success("Payout method saved");
+      setEditing(false);
     } else {
       toast.error("Failed to save payout method");
     }
   };
+
+  if (!editing && user?.payout) {
+    return (
+      <PayoutMethodView
+        payout={user.payout}
+        onEdit={() => {
+          reset({
+            method: user.payout?.method ?? PAYOUT_METHODS.USDT,
+            walletAddress: user.payout?.walletAddress ?? "",
+            bankName: user.payout?.bankName ?? "",
+            accountTitle: user.payout?.accountTitle ?? "",
+            iban: user.payout?.iban ?? "",
+          });
+          setEditing(true);
+        }}
+      />
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -92,7 +145,7 @@ export function PayoutMethodForm() {
 
       {method === PAYOUT_METHODS.USDT ? (
         <div className="space-y-1.5">
-          <Label htmlFor="walletAddress">USDT wallet address (TRC-20)</Label>
+          <Label htmlFor="walletAddress">USDT wallet address (ERC-20)</Label>
           <Input id="walletAddress" placeholder="0x…" {...register("walletAddress")} />
           {errors.walletAddress && <p className="text-xs text-destructive">{errors.walletAddress.message}</p>}
         </div>
@@ -117,9 +170,16 @@ export function PayoutMethodForm() {
       )}
 
       <p className="text-xs text-muted-foreground">Minimum payout is $50.00.</p>
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Saving…" : "Save"}
-      </Button>
+      <div className="flex gap-2">
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Saving…" : "Save"}
+        </Button>
+        {user?.payout && (
+          <Button type="button" variant="outline" onClick={() => setEditing(false)}>
+            Cancel
+          </Button>
+        )}
+      </div>
     </form>
   );
 }
