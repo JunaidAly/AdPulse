@@ -1,11 +1,20 @@
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { ReportRow, ReportTotals } from "@/services/api";
+import type { ReportGroupKey, ReportRow, ReportTotals } from "@/services/api";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-export type SortKey = "date" | "siteDomain" | "impressions" | "clicks" | "ctr" | "ecpmCents" | "revenueCents";
+export type SortKey =
+  | "date"
+  | "siteDomain"
+  | "country"
+  | "adUnit"
+  | "impressions"
+  | "clicks"
+  | "ctr"
+  | "ecpmCents"
+  | "revenueCents";
 export type SortDir = "asc" | "desc";
 
 interface Column {
@@ -15,27 +24,44 @@ interface Column {
   render: (r: ReportRow) => string;
 }
 
-const COLUMNS: Column[] = [
-  { key: "date", label: "Date", render: (r) => (r.date ? format(parseISO(r.date), "MMM d, yyyy") : "—") },
-  { key: "siteDomain", label: "Site", render: (r) => r.siteDomain ?? "—" },
-  { key: "impressions", label: "Impressions", numeric: true, render: (r) => formatNumber(r.impressions) },
-  { key: "clicks", label: "Clicks", numeric: true, render: (r) => formatNumber(r.clicks) },
-  { key: "ctr", label: "CTR", numeric: true, render: (r) => formatPercent(r.ctr, 2) },
-  { key: "ecpmCents", label: "eCPM", numeric: true, render: (r) => formatCurrency(r.ecpmCents) },
-  { key: "revenueCents", label: "Revenue", numeric: true, render: (r) => formatCurrency(r.revenueCents) },
-];
+const DIMENSION_COLUMNS: Record<ReportGroupKey, Column> = {
+  date: { key: "date", label: "Date", render: (r) => (r.date ? format(parseISO(r.date), "MMM d, yyyy") : "—") },
+  site: { key: "siteDomain", label: "Site", render: (r) => r.siteDomain ?? "—" },
+  country: {
+    key: "country",
+    label: "Country",
+    render: (r) => (r.country ? `${r.country}${r.countryCode ? ` (${r.countryCode})` : ""}` : "—"),
+  },
+  adUnit: { key: "adUnit", label: "Ad unit", render: (r) => r.adUnit ?? "—" },
+};
 
 interface ReportsTableProps {
   rows: ReportRow[];
   totals: ReportTotals;
-  groupBy: "date" | "site";
+  groupBy: ReportGroupKey[];
   sortKey: SortKey;
   sortDir: SortDir;
   onSort: (key: SortKey) => void;
 }
 
 export function ReportsTable({ rows, totals, groupBy, sortKey, sortDir, onSort }: ReportsTableProps) {
-  const cols = COLUMNS.filter((c) => (groupBy === "date" ? c.key !== "siteDomain" : c.key !== "date"));
+  // GAM can't attribute clicks/CTR to country or ad unit, so those columns
+  // only make sense when grouping purely by date/site.
+  const hasEngagement = !groupBy.includes("country") && !groupBy.includes("adUnit");
+
+  const dimCols = groupBy.map((k) => DIMENSION_COLUMNS[k]);
+  const metricCols: Column[] = [
+    { key: "impressions", label: "Impressions", numeric: true, render: (r) => formatNumber(r.impressions) },
+    ...(hasEngagement
+      ? [
+          { key: "clicks" as const, label: "Clicks", numeric: true, render: (r: ReportRow) => formatNumber(r.clicks ?? 0) },
+          { key: "ctr" as const, label: "CTR", numeric: true, render: (r: ReportRow) => formatPercent(r.ctr ?? 0, 2) },
+        ]
+      : []),
+    { key: "ecpmCents", label: "eCPM", numeric: true, render: (r) => formatCurrency(r.ecpmCents) },
+    { key: "revenueCents", label: "Revenue", numeric: true, render: (r) => formatCurrency(r.revenueCents) },
+  ];
+  const cols = [...dimCols, ...metricCols];
 
   return (
     <Table>
@@ -71,10 +97,14 @@ export function ReportsTable({ rows, totals, groupBy, sortKey, sortDir, onSort }
       </TableBody>
       <TableFooter>
         <TableRow>
-          <TableCell>Totals</TableCell>
+          <TableCell colSpan={dimCols.length}>Totals</TableCell>
           <TableCell className="text-right tabular-nums">{formatNumber(totals.impressions)}</TableCell>
-          <TableCell className="text-right tabular-nums">{formatNumber(totals.clicks)}</TableCell>
-          <TableCell className="text-right tabular-nums">{formatPercent(totals.ctr, 2)}</TableCell>
+          {hasEngagement && (
+            <>
+              <TableCell className="text-right tabular-nums">{formatNumber(totals.clicks ?? 0)}</TableCell>
+              <TableCell className="text-right tabular-nums">{formatPercent(totals.ctr ?? 0, 2)}</TableCell>
+            </>
+          )}
           <TableCell className="text-right tabular-nums">{formatCurrency(totals.ecpmCents)}</TableCell>
           <TableCell className="text-right font-semibold tabular-nums">{formatCurrency(totals.revenueCents)}</TableCell>
         </TableRow>

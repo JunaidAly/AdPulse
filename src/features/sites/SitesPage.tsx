@@ -26,7 +26,7 @@ export function SitesPage() {
     dispatch(fetchMySites(user.id));
     const to = format(new Date(), "yyyy-MM-dd");
     const from = format(subDays(new Date(), 29), "yyyy-MM-dd");
-    dispatch(fetchReport({ userId: user.id, role: user.role, from, to, groupBy: "site" }));
+    dispatch(fetchReport({ userId: user.id, role: user.role, from, to, groupBy: ["site"] }));
   }, [dispatch, user]);
 
   const revenueBySite = useMemo(() => {

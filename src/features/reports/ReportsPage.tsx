@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download, Globe } from "lucide-react";
+import { Download, Globe, Layers } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DateRangePicker } from "@/components/common/DateRangePicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -24,9 +23,17 @@ import { fetchAllSites, fetchMySites } from "@/features/sites/sitesSlice";
 import { useAuth } from "@/hooks/useAuth";
 import { useDateRange } from "@/hooks/useDateRange";
 import { formatCurrency, formatPercent } from "@/lib/format";
-import type { ReportRow } from "@/services/api";
+import type { ReportGroupKey, ReportRow } from "@/services/api";
 
 const PAGE_SIZE = 25;
+
+const GROUP_BY_LABELS: Record<ReportGroupKey, string> = {
+  date: "Date",
+  site: "Site",
+  country: "Country",
+  adUnit: "Ad unit",
+};
+const GROUP_BY_ORDER: ReportGroupKey[] = ["date", "site", "country", "adUnit"];
 
 export function ReportsPage() {
   const dispatch = useAppDispatch();
@@ -35,7 +42,7 @@ export function ReportsPage() {
   const { report, reportStatus } = useAppSelector((s) => s.reports);
   const sites = useAppSelector((s) => s.sites.items);
 
-  const [groupBy, setGroupBy] = useState<"date" | "site">("date");
+  const [groupBy, setGroupBy] = useState<ReportGroupKey[]>(["date"]);
   const [selectedSites, setSelectedSites] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -63,7 +70,7 @@ export function ReportsPage() {
   }, [dispatch, user, range.from, range.to, selectedSites, groupBy]);
 
   useEffect(() => {
-    setSortKey(groupBy === "date" ? "date" : "revenueCents");
+    setSortKey(groupBy.includes("date") ? "date" : "revenueCents");
   }, [groupBy]);
 
   const rows = report?.rows ?? [];
@@ -82,27 +89,36 @@ export function ReportsPage() {
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const paged = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const stringSortKeys: SortKey[] = ["date", "siteDomain", "country", "adUnit"];
   const handleSort = (key: SortKey) => {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
       setSortKey(key);
-      setSortDir(key === "date" || key === "siteDomain" ? "asc" : "desc");
+      setSortDir(stringSortKeys.includes(key) ? "asc" : "desc");
     }
   };
 
+  const hasEngagement = !groupBy.includes("country") && !groupBy.includes("adUnit");
+
   const exportCsv = () => {
-    const headers =
-      groupBy === "date"
-        ? ["Date", "Impressions", "Clicks", "CTR", "eCPM", "Revenue"]
-        : ["Site", "Impressions", "Clicks", "CTR", "eCPM", "Revenue"];
-    const line = (r: ReportRow) => [
-      groupBy === "date" ? r.date : r.siteDomain,
-      r.impressions,
-      r.clicks,
-      formatPercent(r.ctr, 2),
-      formatCurrency(r.ecpmCents),
-      formatCurrency(r.revenueCents),
-    ].join(",");
+    const dimHeaders = groupBy.map((k) => GROUP_BY_LABELS[k]);
+    const headers = [
+      ...dimHeaders,
+      "Impressions",
+      ...(hasEngagement ? ["Clicks", "CTR"] : []),
+      "eCPM",
+      "Revenue",
+    ];
+    const dimValue = (r: ReportRow, k: ReportGroupKey) =>
+      k === "date" ? r.date : k === "site" ? r.siteDomain : k === "country" ? r.country : r.adUnit;
+    const line = (r: ReportRow) =>
+      [
+        ...groupBy.map((k) => dimValue(r, k) ?? ""),
+        r.impressions,
+        ...(hasEngagement ? [r.clicks ?? 0, formatPercent(r.ctr ?? 0, 2)] : []),
+        formatCurrency(r.ecpmCents),
+        formatCurrency(r.revenueCents),
+      ].join(",");
     const csv = [headers.join(","), ...sorted.map(line)].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -117,13 +133,22 @@ export function ReportsPage() {
   const toggleSite = (id: string) =>
     setSelectedSites((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
 
+  const toggleGroupBy = (key: ReportGroupKey) =>
+    setGroupBy((prev) => {
+      if (prev.includes(key)) {
+        // Always keep at least one dimension selected.
+        return prev.length === 1 ? prev : prev.filter((k) => k !== key);
+      }
+      return GROUP_BY_ORDER.filter((k) => prev.includes(k) || k === key);
+    });
+
   const loading = reportStatus !== "ready" || !report;
 
   return (
     <>
       <PageHeader
         title="Reports"
-        description="Break down performance by date or site, then export."
+        description="Break down performance by date, site, country, or ad unit, then export."
         actions={
           <Button variant="outline" onClick={exportCsv} disabled={!sorted.length} className="gap-2">
             <Download className="h-4 w-4" /> Export CSV
@@ -158,15 +183,28 @@ export function ReportsPage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Select value={groupBy} onValueChange={(v) => setGroupBy(v as "date" | "site")}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="date">Group by Date</SelectItem>
-              <SelectItem value="site">Group by Site</SelectItem>
-            </SelectContent>
-          </Select>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Layers className="h-4 w-4" />
+                Group by {groupBy.map((k) => GROUP_BY_LABELS[k]).join(" + ")}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48">
+              <DropdownMenuLabel>Group by</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {GROUP_BY_ORDER.map((k) => (
+                <DropdownMenuCheckboxItem
+                  key={k}
+                  checked={groupBy.includes(k)}
+                  onCheckedChange={() => toggleGroupBy(k)}
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  {GROUP_BY_LABELS[k]}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <span className="ml-auto text-sm text-muted-foreground">
             {format(parseISO(range.from), "MMM d")} – {format(parseISO(range.to), "MMM d, yyyy")}

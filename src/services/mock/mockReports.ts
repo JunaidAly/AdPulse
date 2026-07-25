@@ -84,7 +84,18 @@ function collect(
   return rows;
 }
 
-function totalsOf(rows: AdjustedMetric[]): ReportTotals {
+// Mock data always has clicks/CTR/viewability (unlike the real
+// country/ad-unit grouping), so keep them non-optional internally.
+interface MockTotals {
+  impressions: number;
+  clicks: number;
+  revenueCents: number;
+  ecpmCents: number;
+  ctr: number;
+  viewability: number;
+}
+
+function totalsOf(rows: AdjustedMetric[]): MockTotals {
   const impressions = rows.reduce((s, r) => s + r.impressions, 0);
   const clicks = rows.reduce((s, r) => s + r.clicks, 0);
   const revenueCents = rows.reduce((s, r) => s + r.revenueCents, 0);
@@ -214,19 +225,24 @@ export const mockReports: ReportsService = {
     const rows = collect(ids, from, to, share);
     const totals = totalsOf(rows);
 
+    // Mock data only models date/site (no country/ad-unit dimensions) —
+    // real Firebase reports serve those via getReportsGrouped instead.
+    const byDate = groupBy.includes("date");
+    const bySite = groupBy.includes("site");
+
     const groups = new Map<string, AdjustedMetric[]>();
     for (const r of rows) {
-      const key = groupBy === "date" ? r.date : r.siteId;
+      const key = [byDate ? r.date : "", bySite ? r.siteId : ""].join("|");
       (groups.get(key) ?? groups.set(key, []).get(key)!).push(r);
     }
 
     const out: ReportRow[] = [...groups.entries()].map(([key, g]) => {
       const t = totalsOf(g);
-      const site = groupBy === "site" ? db.sites.find((s) => s.id === key) : undefined;
+      const site = bySite ? db.sites.find((s) => s.id === g[0]?.siteId) : undefined;
       return {
         key,
-        date: groupBy === "date" ? key : undefined,
-        siteId: groupBy === "site" ? key : undefined,
+        date: byDate ? g[0]?.date : undefined,
+        siteId: bySite ? g[0]?.siteId : undefined,
         siteDomain: site?.domain,
         impressions: t.impressions,
         clicks: t.clicks,
@@ -238,7 +254,7 @@ export const mockReports: ReportsService = {
     });
 
     out.sort((a, b) =>
-      groupBy === "date"
+      byDate
         ? (b.date ?? "").localeCompare(a.date ?? "")
         : b.revenueCents - a.revenueCents,
     );
