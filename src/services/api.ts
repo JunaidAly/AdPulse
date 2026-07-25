@@ -71,26 +71,34 @@ export interface Payout {
 }
 
 /** A single aggregated row shown in tables/charts. Revenue is integer cents. */
+export type ReportGroupKey = "date" | "site" | "country" | "adUnit";
+
 export interface ReportRow {
   key: string;
   date?: string; // ISO date when grouped by date
   siteId?: string;
   siteDomain?: string;
+  country?: string;
+  countryCode?: string;
+  adUnit?: string;
   impressions: number;
-  clicks: number;
   revenueCents: number;
   ecpmCents: number;
-  ctr: number; // 0..1
-  viewability: number; // 0..1
+  // Only available when grouping by date/site (GAM can't attribute clicks/
+  // viewability to country or ad unit) — undefined means "not available",
+  // not zero.
+  clicks?: number;
+  ctr?: number; // 0..1
+  viewability?: number; // 0..1
 }
 
 export interface ReportTotals {
   impressions: number;
-  clicks: number;
   revenueCents: number;
   ecpmCents: number;
-  ctr: number;
-  viewability: number;
+  clicks?: number;
+  ctr?: number;
+  viewability?: number;
 }
 
 export interface MetricWithDelta {
@@ -149,7 +157,8 @@ export interface ReportQuery extends DateRange {
   role: Role;
   /** Restrict to these site ids. Empty/undefined = all sites visible to user. */
   siteIds?: string[];
-  groupBy: "date" | "site";
+  /** One or more dimensions to group by, combined (e.g. ["date","country"]). */
+  groupBy: ReportGroupKey[];
 }
 
 export interface DashboardQuery extends DateRange {

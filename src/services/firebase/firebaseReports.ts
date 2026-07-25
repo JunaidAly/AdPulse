@@ -20,6 +20,7 @@ import type {
   DashboardQuery,
   DashboardSummary,
   DeviceSlice,
+  ReportGroupKey,
   ReportQuery,
   ReportRow,
   ReportsService,
@@ -82,6 +83,40 @@ const callGetBreakdown = httpsCallable<
   GetBreakdownResponse
 >(functions, "getBreakdown");
 
+export interface GetReportsGroupedRow {
+  key: string;
+  date?: string;
+  siteId?: string;
+  siteDomain?: string;
+  country?: string;
+  countryCode?: string;
+  adUnit?: string;
+  impressions: number;
+  revenueCents: number;
+}
+
+interface GetReportsGroupedResponse {
+  rows: GetReportsGroupedRow[];
+  totals: { impressions: number; revenueCents: number };
+  dateRange: { startDate: string; endDate: string };
+}
+
+const callGetReportsGrouped = httpsCallable<
+  {
+    startDate: string;
+    endDate: string;
+    siteIds?: string[];
+    groupBy: ReportGroupKey[];
+  },
+  GetReportsGroupedResponse
+>(functions, "getReportsGrouped");
+
+/** True when GAM can't supply clicks/CTR/viewability for this grouping —
+ * those dimensions only exist in the country/ad-unit breakdown collection. */
+function needsDimensionGrouping(groupBy: ReportGroupKey[]): boolean {
+  return groupBy.includes("country") || groupBy.includes("adUnit");
+}
+
 async function fetchRange(
   from: string,
   to: string,
@@ -127,17 +162,68 @@ function deltaRatio(current: number, previous: number): number {
   return (current - previous) / previous;
 }
 
+/** Country/ad-unit grouping — backed by reports_dimensions (no clicks/CTR/
+ * viewability available at that granularity). */
+async function getReportGrouped(query: ReportQuery): Promise<{
+  rows: ReportRow[];
+  totals: ReportTotals;
+}> {
+  let res;
+  try {
+    res = await callGetReportsGrouped({
+      startDate: query.from,
+      endDate: query.to,
+      siteIds: query.siteIds && query.siteIds.length ? query.siteIds : undefined,
+      groupBy: query.groupBy,
+    });
+  } catch (err) {
+    throw new Error(errorMessage(err, "Could not load grouped report."));
+  }
+  const rows: ReportRow[] = res.data.rows.map((r) => ({
+    key: r.key,
+    date: r.date,
+    siteId: r.siteId,
+    siteDomain: r.siteDomain,
+    country: r.country,
+    countryCode: r.countryCode,
+    adUnit: r.adUnit,
+    impressions: r.impressions,
+    revenueCents: r.revenueCents,
+    ecpmCents: computeEcpmCents(r.revenueCents, r.impressions),
+  }));
+  const totals: ReportTotals = {
+    impressions: res.data.totals.impressions,
+    revenueCents: res.data.totals.revenueCents,
+    ecpmCents: computeEcpmCents(
+      res.data.totals.revenueCents,
+      res.data.totals.impressions,
+    ),
+  };
+  return { rows, totals };
+}
+
 export const firebaseReports: ReportsService = {
   async getReport(query: ReportQuery): Promise<{
     rows: ReportRow[];
     totals: ReportTotals;
   }> {
-    const data = await fetchRange(query.from, query.to, query.siteIds);
+    if (needsDimensionGrouping(query.groupBy)) {
+      return getReportGrouped(query);
+    }
 
-    const groups = new Map<string, Acc & { domain?: string }>();
+    const data = await fetchRange(query.from, query.to, query.siteIds);
+    const byDate = query.groupBy.includes("date");
+    const bySite = query.groupBy.includes("site");
+
+    const groups = new Map<string, Acc & { domain?: string; date?: string; siteId?: string }>();
     for (const r of data.rows) {
-      const key = query.groupBy === "date" ? r.date : r.siteId;
-      const g = groups.get(key) ?? { ...emptyAcc(), domain: r.siteDomain };
+      const key = [byDate ? r.date : "", bySite ? r.siteId : ""].join("|");
+      const g = groups.get(key) ?? {
+        ...emptyAcc(),
+        domain: r.siteDomain,
+        date: byDate ? r.date : undefined,
+        siteId: bySite ? r.siteId : undefined,
+      };
       g.impressions += r.impressions;
       g.clicks += r.clicks;
       g.revenueCents += r.revenueCents;
@@ -148,9 +234,9 @@ export const firebaseReports: ReportsService = {
 
     const rows: ReportRow[] = [...groups.entries()].map(([key, g]) => ({
       key,
-      date: query.groupBy === "date" ? key : undefined,
-      siteId: query.groupBy === "site" ? key : undefined,
-      siteDomain: query.groupBy === "site" ? g.domain : undefined,
+      date: g.date,
+      siteId: g.siteId,
+      siteDomain: bySite ? g.domain : undefined,
       impressions: g.impressions,
       clicks: g.clicks,
       revenueCents: g.revenueCents,
