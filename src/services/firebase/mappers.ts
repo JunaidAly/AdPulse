@@ -44,6 +44,7 @@ export interface RawSite {
   revenueShare?: number | null;
   createdAt?: MaybeTimestamp;
   ownerName?: string; // present on callable responses only
+  lkzSiteDomain?: string | null;
 }
 
 // Backend user.status includes "pending"; the app's User type only knows
@@ -88,6 +89,7 @@ export function toSite(id: string, data: RawSite, ownerName = ""): Site {
     status: (data.status as Site["status"]) ?? "pending",
     addedAt: tsToIso(data.createdAt),
     gamMappingName: data.gamSiteName ?? undefined,
+    lkzSiteDomain: data.lkzSiteDomain ?? null,
   };
 }
 

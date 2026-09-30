@@ -57,6 +57,8 @@ export interface Site {
   status: SiteStatus;
   addedAt: string; // ISO
   gamMappingName?: string;
+  /** Domain as it appears in lkz reports; null/undefined when unmapped. */
+  lkzSiteDomain?: string | null;
 }
 
 export interface Payout {
@@ -193,11 +195,15 @@ export interface SitesService {
   listByUser(userId: string): Promise<Site[]>;
   listAll(): Promise<Site[]>;
   addSite(userId: string, domain: string): Promise<Site>;
-  /** Admin approve. Optional per-site revenueShare override (0.5–1.0). */
+  /**
+   * Admin approve. Optional per-site revenueShare override (0.5–1.0) and
+   * optional lkz domain mapping (null clears it).
+   */
   approveSite(
     siteId: string,
     gamMappingName: string,
     revenueShare?: number,
+    lkzSiteDomain?: string | null,
   ): Promise<Site>;
   rejectSite(siteId: string): Promise<Site>;
   /** Admin-only: removes the site doc. Historical revenue rows are kept. */

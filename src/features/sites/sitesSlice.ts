@@ -27,11 +27,17 @@ export const addSite = createAsyncThunk("sites/add", (args: { userId: string; do
 
 export const approveSite = createAsyncThunk(
   "sites/approve",
-  (args: { siteId: string; gamMappingName: string; revenueShare?: number }) =>
+  (args: {
+    siteId: string;
+    gamMappingName: string;
+    revenueShare?: number;
+    lkzSiteDomain?: string | null;
+  }) =>
     services.sites.approveSite(
       args.siteId,
       args.gamMappingName,
       args.revenueShare,
+      args.lkzSiteDomain,
     ),
 );
 

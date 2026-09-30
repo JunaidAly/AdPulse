@@ -86,6 +86,7 @@ export const firebaseSites: SitesService = {
     siteId: string,
     gamMappingName: string,
     revenueShare?: number,
+    lkzSiteDomain?: string | null,
   ): Promise<Site> {
     try {
       const res = await callReviewSite({
@@ -93,6 +94,7 @@ export const firebaseSites: SitesService = {
         action: "approve",
         gamSiteName: gamMappingName,
         ...(revenueShare !== undefined ? { revenueShare } : {}),
+        ...(lkzSiteDomain !== undefined ? { lkzSiteDomain } : {}),
       });
       return toSite(res.data.id, res.data);
     } catch (err) {

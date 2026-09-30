@@ -18,12 +18,14 @@ import type { Site } from "@/services";
 export function ApproveSiteDialog({ site, onClose }: { site: Site | null; onClose: () => void }) {
   const dispatch = useAppDispatch();
   const [gamSiteName, setGamSiteName] = useState("");
+  const [lkzSiteDomain, setLkzSiteDomain] = useState("");
   const [shareInput, setShareInput] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (site) {
       setGamSiteName(site.domain);
+      setLkzSiteDomain(site.lkzSiteDomain ?? "");
       setShareInput("");
     }
   }, [site]);
@@ -45,7 +47,14 @@ export function ApproveSiteDialog({ site, onClose }: { site: Site | null; onClos
 
     setSaving(true);
     const result = await dispatch(
-      approveSite({ siteId: site.id, gamMappingName: gamSiteName.trim(), revenueShare }),
+      approveSite({
+        siteId: site.id,
+        gamMappingName: gamSiteName.trim(),
+        revenueShare,
+        // Blank clears the mapping, so this site's lkz rows stop being
+        // attributed rather than silently keeping a stale domain.
+        lkzSiteDomain: lkzSiteDomain.trim() || null,
+      }),
     );
     setSaving(false);
 
@@ -77,6 +86,19 @@ export function ApproveSiteDialog({ site, onClose }: { site: Site | null; onClos
             />
             <p className="text-xs text-muted-foreground">
               Must exactly match the SITE_NAME value in Google Ad Manager.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="lkzSiteDomain">lkz site domain (optional)</Label>
+            <Input
+              id="lkzSiteDomain"
+              value={lkzSiteDomain}
+              placeholder="Leave blank if this site has no lkz inventory"
+              onChange={(e) => setLkzSiteDomain(e.target.value.trim().toLowerCase())}
+            />
+            <p className="text-xs text-muted-foreground">
+              The domain as it appears in lkz reports.
             </p>
           </div>
 
