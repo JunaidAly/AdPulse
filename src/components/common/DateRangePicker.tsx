@@ -75,18 +75,17 @@ export function DateRangePicker({ preset, label, range, onPreset, onCustom }: Da
         </div>
 
         {/*
-          Ad Manager buckets its days in the network timezone (IST), which is
-          what every preset here resolves to. lkz buckets its days in US
-          Pacific — about 12.5 hours behind — so for the first half of each
-          IST day lkz's "today" has not started yet and its newest figures
-          are still dated yesterday. Without this note that reads as missing
-          data rather than a timezone difference.
+          Both sources now bucket days in IST: GAM via its network timezone,
+          lkz via the account's "Reporting timezone" setting (set to Kolkata
+          on 2026-10-01 — before that it was US Pacific, and lkz's day ran
+          ~12.5h behind, which made "Today" look empty all morning). If that
+          lkz setting is ever changed again, past rows get re-bucketed under
+          new dates: purge and re-ingest (npm run lkz:purge) or the same
+          revenue is counted twice.
         */}
         <DropdownMenuSeparator />
         <p className="px-2 pb-1 text-[11px] leading-snug text-muted-foreground">
-          GAM figures follow the IST day. lkz reports on US Pacific dates, so
-          today&apos;s lkz figures only start appearing from around 12:30 PM
-          IST.
+          Figures refresh hourly, so today&apos;s totals are still filling in.
         </p>
       </DropdownMenuContent>
     </DropdownMenu>
