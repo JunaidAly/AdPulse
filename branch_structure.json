@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "Develop",
+    "authentication",
+    "main"
+  ],
+  "parent": {
+    "Develop": "main",
+    "authentication": "main",
+    "main": null
+  },
+  "order": [
+    "main",
+    "Develop",
+    "authentication"
+  ]
+}
