@@ -42,6 +42,8 @@ export interface GetReportsRow {
   CTR: number;
   viewableImpressions: number;
   measurableImpressions: number;
+  adRequests: number;
+  matchedImpressions: number;
   ownerUid?: string;
   ownerEmail?: string;
 }
@@ -56,6 +58,8 @@ export interface GetReportsResponse {
     CTR: number;
     viewableImpressions: number;
     measurableImpressions: number;
+    adRequests: number;
+    matchedImpressions: number;
     byOwner?: {
       uid: string;
       ownerEmail: string;
@@ -350,7 +354,12 @@ export const firebaseReports: ReportsService = {
       ctr: { value: curCtr, delta: deltaRatio(curCtr, prevCtr) },
       viewability: { value: curView, delta: deltaRatio(curView, prevView) },
       clicks: cur.clicks,
-      matchRate: 0,
+      // Match rate comes from lkz only; GAM reports none, so its rows add 0
+      // to both sides and simply do not move the figure. Guard the divide so
+      // a GAM-only account reads 0 rather than NaN.
+      matchRate: cur.adRequests > 0 ?
+        cur.matchedImpressions / cur.adRequests :
+        0,
       activeSites: current.sites.length,
     };
 
